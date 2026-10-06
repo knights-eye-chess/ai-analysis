@@ -1,0 +1,435 @@
+{
+  "version": "0.1.0-dev.2",
+  "sourceCommit": "d58a1a2ad3132515891a2452596ab571af4b55ba",
+  "node": "v24.19.0",
+  "sourceHashes": [
+    {
+      "path": ".gitignore",
+      "sha256": "51f1977cb4ab14529d1e1723c11e05c11e63c368926b8901c89812382fba9008"
+    },
+    {
+      "path": "AGENTS.md",
+      "sha256": "03a0dab43152aaeab90ebf2be9ce745efa96ca6e5805a3d303c6f08c1235d9d7"
+    },
+    {
+      "path": "README.md",
+      "sha256": "62f76125df43245513e013b2c6084fc17602c44d93fed0c3bfa9712db921b7a7"
+    },
+    {
+      "path": "SOURCE-ORIGIN.json",
+      "sha256": "c5ae207c9cbc337eff42a4a2ea738a5fc44637076edbdf24b2ae842543e49bfd"
+    },
+    {
+      "path": "build.mjs",
+      "sha256": "f8fafee013afc9028c2331a392d4dfaf86f665e01d1b9efa1b3323c18ffb40f0"
+    },
+    {
+      "path": "npm-shrinkwrap.json",
+      "sha256": "f7e795b7d134fb87b576d44ecb2da171148cfcaa05436e24fbed18f3c1666cfe"
+    },
+    {
+      "path": "package.json",
+      "sha256": "477efb3cbcfeb6c069a38ba36f4a3f145cd0768ffed4190a712e02381a4bd415"
+    },
+    {
+      "path": "scripts/pack.mjs",
+      "sha256": "4acea39a16b814ab12fa59983e028a80cdd6cb5f128f308a8cdc184b0a78910b"
+    },
+    {
+      "path": "scripts/update-dependency.mjs",
+      "sha256": "c398519a64ccd3770af24bfdd353364e9bde5a477ae3d5ed2a54f66e279c15d6"
+    },
+    {
+      "path": "src/ai-request-failure.ts",
+      "sha256": "2be34386a6d31c2d77a8cee53f3764bbf8440745dccbe020b17862b82eea5301"
+    },
+    {
+      "path": "src/ai-request-limits.ts",
+      "sha256": "beb60ad0af09fcf5a57ec7e4f1b86e3a029b308cb078b5912c7cade8d5c65916"
+    },
+    {
+      "path": "src/ai-routing-diagnostics.ts",
+      "sha256": "b65763f522285e8cfef4370bb503eb135d25cfc1718f679d746bcf6a76dddbe2"
+    },
+    {
+      "path": "src/chess-reasoning/ablation-adaptive-evidence-loop.ts",
+      "sha256": "580c9c439670decd184ff8eca96d847f2a0b6f1c4bcb2365d50f64f555bf3437"
+    },
+    {
+      "path": "src/chess-reasoning/ablation-adaptive-runtime.ts",
+      "sha256": "e27d17655425fa9d0c4ee1eb11e1c09f2348ec8f6f1d398f6a1d83e2d07b52c5"
+    },
+    {
+      "path": "src/chess-reasoning/ablation-direct-synthesis.ts",
+      "sha256": "29e3259f378e8950c6e5ca20cb310276036bcd8f0f507de77f9ada229b884d89"
+    },
+    {
+      "path": "src/chess-reasoning/ablation-evidence-bundle.ts",
+      "sha256": "aa86d8f4e7a69dc8cc6fa72bf952fa02845c610562d394fd2c014fcc4b948fb4"
+    },
+    {
+      "path": "src/chess-reasoning/ablation-evidence-capture.ts",
+      "sha256": "56384ee407b4b3edb7bb5f1e752360131196b2e8678ec148fef8ee455d9948bd"
+    },
+    {
+      "path": "src/chess-reasoning/ablation-lean-direct-runtime.ts",
+      "sha256": "c80cadbacb422d4bdee54115ebca1a153d6428bb0701bc02c2bd597c1323d75d"
+    },
+    {
+      "path": "src/chess-reasoning/ablation-model-facing-evidence.ts",
+      "sha256": "384680dbf6a56425c17d20037f717248fc56360aabc12c2531cfc2afaed4a44a"
+    },
+    {
+      "path": "src/chess-reasoning/ablation-transport-correction.ts",
+      "sha256": "2f2734f4cab9ad3e3990ae7c21618e3423fd863388ca5c8c77179b6de59e9a80"
+    },
+    {
+      "path": "src/chess-reasoning/ai-sdk-runtime-support.ts",
+      "sha256": "d7ba98660a8f74d2afd360349de54fe5a204e87e4eb15b6d80c4fa43b4cdf15e"
+    },
+    {
+      "path": "src/chess-reasoning/answer-host-contracts.ts",
+      "sha256": "70af3ce5645001f35771db86035bbbded7303c39385172b6581543785999ff7a"
+    },
+    {
+      "path": "src/chess-reasoning/answer-model-connector.ts",
+      "sha256": "e637018cad3aaaaf7b9473615dc7241e74ee31066afd74bf4528622aa8367397"
+    },
+    {
+      "path": "src/chess-reasoning/answer-pipeline-exports.ts",
+      "sha256": "7c61e5f46495b2c10a975411ff5a353554ea276347a6392f89f9224b7c713aa2"
+    },
+    {
+      "path": "src/chess-reasoning/answer-pipeline.ts",
+      "sha256": "e58cf5a5f9429dff833dff00ba3cab3177b89268bae6a5905dfeb3a806243958"
+    },
+    {
+      "path": "src/chess-reasoning/answer-reference-validation.ts",
+      "sha256": "d4ef37a18c5888fcaac0f37ec05e2cb1cd39ae4585da293278607b31baa26a95"
+    },
+    {
+      "path": "src/chess-reasoning/answer-tool-host.ts",
+      "sha256": "b7664774cefa33f328f25473ee36c4b9f8988131bbf0279bc5df067d2a2fe361"
+    },
+    {
+      "path": "src/chess-reasoning/branch-expansion-policy.ts",
+      "sha256": "2413feb6a8d9620b2b9f0e1fd0af12d3a47b367231f7ea2d57a061daa2b91b43"
+    },
+    {
+      "path": "src/chess-reasoning/branch-expansion.ts",
+      "sha256": "1f9d0b4d466e0d988919061c176cbb84b5cc83867cee9e70be2263203fd2b448"
+    },
+    {
+      "path": "src/chess-reasoning/causal-claim-checks.ts",
+      "sha256": "c1cd305ce132878606ac24fc4f1a9e333509759b4cfade8adf75dd09b69b48d6"
+    },
+    {
+      "path": "src/chess-reasoning/chess-reference-dictionary.ts",
+      "sha256": "88c44d73a11b4f57c46aea222c693b8859aaadda02bc337842b88cc1e9b1c22b"
+    },
+    {
+      "path": "src/chess-reasoning/classification-question-target.ts",
+      "sha256": "3d29ec857e9439fd503baa996415cfdc7712d55f7423cbca5e52bc8ceef75dfe"
+    },
+    {
+      "path": "src/chess-reasoning/classification-reassessment.ts",
+      "sha256": "85f827f227fbb75f46d97ba4c3fa8b982883dd07d49eeef01d2c27166f30484e"
+    },
+    {
+      "path": "src/chess-reasoning/compact-search-preparation.ts",
+      "sha256": "aa5244be254eec523197565216868e205a7e54090c4573325a7acd9810af128d"
+    },
+    {
+      "path": "src/chess-reasoning/concept-registry.ts",
+      "sha256": "22a306b7a04edb4ea788802a8cba8d36cab6cabf468a4b4dfb2fe8d8b24136f2"
+    },
+    {
+      "path": "src/chess-reasoning/conversation-context.ts",
+      "sha256": "c8fa989ccb4c0dc8ce8aceeb4bc1806bd567d8fc81da4cf4410c7af0114cc3bd"
+    },
+    {
+      "path": "src/chess-reasoning/evidence-citation-normalization.ts",
+      "sha256": "344adf47da8df7c266c659f9b25781c0f3e13e64e43deaf8b2182009470c8e94"
+    },
+    {
+      "path": "src/chess-reasoning/evidence-licenses.ts",
+      "sha256": "121e290d798c043d6dcda4aeabe50807159ac17b075bc5baf78a01f4d6f144a5"
+    },
+    {
+      "path": "src/chess-reasoning/evidence-selector-contract.ts",
+      "sha256": "0710cb2dbc7f017091a21d8531e44fd9b3741944134500d6449cdf54b9fe5dfa"
+    },
+    {
+      "path": "src/chess-reasoning/existing-analysis-context.ts",
+      "sha256": "1c1861be24efe52cd124578eccbe9ec39513f4a651c4d87b246b5b82a8506506"
+    },
+    {
+      "path": "src/chess-reasoning/fact-observation-provider.ts",
+      "sha256": "bc59b25c8ffda565663823e6b1bdcecfa4da475a22f41960a03714f3faa367bf"
+    },
+    {
+      "path": "src/chess-reasoning/fact-provider.ts",
+      "sha256": "3ed8e880cd59e79ab8fb4ce86cd9b8ecbe9a0a03c0147af099ea64b30b69ea41"
+    },
+    {
+      "path": "src/chess-reasoning/historical-prose.ts",
+      "sha256": "f69800ee1b1dd786fc3bfa22f6bb5ee62319e4b20c2f0889e0ce6d8d426f53ee"
+    },
+    {
+      "path": "src/chess-reasoning/idea-graph.ts",
+      "sha256": "bb3cb68ff289e743109a152a3c8c920b49e0bf57a7e80c39a7aea92014c07920"
+    },
+    {
+      "path": "src/chess-reasoning/initial-search-plan.ts",
+      "sha256": "34f726f7d8337541a5355e0141d0c58b956e32b0c37800cba47c20580f83af65"
+    },
+    {
+      "path": "src/chess-reasoning/lossless-evidence-sharing.ts",
+      "sha256": "a50026393d345b560d3b7c33e3261355d33c5f7bc3c05982031b57f5553c68f5"
+    },
+    {
+      "path": "src/chess-reasoning/matched-comparison.ts",
+      "sha256": "29daac4f1161cd69f3c20c2540b68d509c4b379f261d397a2dcebfc4e2605072"
+    },
+    {
+      "path": "src/chess-reasoning/material-accounting.ts",
+      "sha256": "052bfbcf5d1ada23ce01e81a887e492ce3de02cc8267c82b4a6fa9f87740edfb"
+    },
+    {
+      "path": "src/chess-reasoning/material-format.ts",
+      "sha256": "d0c70e3d10d2bf4c5fc65864882d7dce1ff7ffcd0a5fe3c43df6d046fd7e3ac3"
+    },
+    {
+      "path": "src/chess-reasoning/mechanical-fact-provider.ts",
+      "sha256": "9747678426c9c53767991f59c94f60848548c84c6d1ab887742fc00a1c22c57b"
+    },
+    {
+      "path": "src/chess-reasoning/mechanical-ray-facts.ts",
+      "sha256": "f0799898708ef8ea76131da71e9e2184c724b58bb57286c30df5d39dafd50f73"
+    },
+    {
+      "path": "src/chess-reasoning/mechanism-presentation.ts",
+      "sha256": "ca2ed2d05b39ec7bfe888c15c623cae53f993b104c7a367e07074c2612dcfb4c"
+    },
+    {
+      "path": "src/chess-reasoning/move-mechanism-facts.ts",
+      "sha256": "8e9547589d3ac1b36fe05e70c02782e7e2edb32cd09a58f60524573fd8828829"
+    },
+    {
+      "path": "src/chess-reasoning/native-answer-connector.ts",
+      "sha256": "f547a1ae72b5fe1b8821dd3e869e04a307662db0f2f048a8271406558c0826c6"
+    },
+    {
+      "path": "src/chess-reasoning/opening-source-contracts.ts",
+      "sha256": "b9ad745d208b446e97c1794c028b70a71afb23bef94b147fe246e241336b7b42"
+    },
+    {
+      "path": "src/chess-reasoning/opening-source-credits.ts",
+      "sha256": "685b7ed688a2cd67d559ec516fba6705ac50e9cd141aba19f9ccd2f5efead0c3"
+    },
+    {
+      "path": "src/chess-reasoning/opponent-threat-preparation.ts",
+      "sha256": "2687ef82b06efa51e605b2fd0829b4ea36b13815740f09f67f93f2f874d8dbd8"
+    },
+    {
+      "path": "src/chess-reasoning/piece-identities.ts",
+      "sha256": "dcbce1a3e5df5cb37f919f964695fb15cf7808cfb1cc0f6eb093d3e2285fe96a"
+    },
+    {
+      "path": "src/chess-reasoning/poc-contracts.ts",
+      "sha256": "bd9e048e158e000b2c8b542ba9174ae03d5e38b78ea33f7bc74d058557eee7a7"
+    },
+    {
+      "path": "src/chess-reasoning/poc-hypotheses.ts",
+      "sha256": "c3e5d6e43e7c853e68f928197dad44df2abb4f5d5dd607e8e2ee600c4bb03fb6"
+    },
+    {
+      "path": "src/chess-reasoning/poc-move-witnesses.ts",
+      "sha256": "d3dcce8a77f1d585aacd553516a74cc7123cae6d4d922a3d25b113764b7a8f74"
+    },
+    {
+      "path": "src/chess-reasoning/poc-observations.ts",
+      "sha256": "55fb99e9c3e69a84ba407354412da1e941491e215a598c712baf79300b98bab5"
+    },
+    {
+      "path": "src/chess-reasoning/poc-piece-refs.ts",
+      "sha256": "bc6c90e83b20fe2747c5395fa0a02942607b92d490426ae31853a52929bb6e59"
+    },
+    {
+      "path": "src/chess-reasoning/poc-plan-model.ts",
+      "sha256": "c43b75245fc33bd42cf2df021ac6b2fde53afa6be139346580f9651da9f3a421"
+    },
+    {
+      "path": "src/chess-reasoning/poc-semantic-text.ts",
+      "sha256": "f24223ac6ba7a36c6a53fecff56b4c3861645596dc4415d6abe91a14280e4d04"
+    },
+    {
+      "path": "src/chess-reasoning/poc-tools.ts",
+      "sha256": "f0306a7848b7925415dc96e02c825335abcaea51af549b0c1ecc920cbb1d8735"
+    },
+    {
+      "path": "src/chess-reasoning/portable-answer-runtime.ts",
+      "sha256": "054b9336ef1a5b10c7a72691dca0a1a37407ded66e291165150473a374c21014"
+    },
+    {
+      "path": "src/chess-reasoning/position-analysis-contracts.ts",
+      "sha256": "f6999f91440475c4ff3260bd6b9ef8167e9686df46423603bc508f98280ff002"
+    },
+    {
+      "path": "src/chess-reasoning/position-analysis-scope.ts",
+      "sha256": "f7aef1733c7b9645725df3da891ddaf2b9f2c0984ae4cda61c6c4fceca37c454"
+    },
+    {
+      "path": "src/chess-reasoning/preparation-consolidation.ts",
+      "sha256": "be7236bde3f3f9240bf3cbdafd925024e953e248633c9a97114ce8e387246b5e"
+    },
+    {
+      "path": "src/chess-reasoning/production-observation-provider.ts",
+      "sha256": "fd7368c14a0781abebd646e5bc43d25e7bcb44594b3669863094fd385e3d593c"
+    },
+    {
+      "path": "src/chess-reasoning/question-routing.ts",
+      "sha256": "ee02928f3171bbcd425b7b66f95702c6d7320dfbf6eb678ac27e592f4ecb7af0"
+    },
+    {
+      "path": "src/chess-reasoning/recorded-main-line.ts",
+      "sha256": "2ad65cf5fdd3fcf3ef21cf63c9978524cdb8f4b598c5cb6bc000867b17fb3537"
+    },
+    {
+      "path": "src/chess-reasoning/recorded-position-tools.ts",
+      "sha256": "2dd5dc9237ade97c091fcd672e332d1fa7beb03d38e046c99dfba126bfc4e2f8"
+    },
+    {
+      "path": "src/chess-reasoning/recorded-reference-context.ts",
+      "sha256": "55bc8b61888cf3d581b4613669583d0b539610c239e0db3940135bc6e60597ac"
+    },
+    {
+      "path": "src/chess-reasoning/recorded-selected-classification.ts",
+      "sha256": "be5042b0bd161f09fe77e84c84ac6ae450c1c28a22f71b3fb5385af8730b5f1e"
+    },
+    {
+      "path": "src/chess-reasoning/reference-limits.ts",
+      "sha256": "59a805d7dd674ef06988b02885d10e875ba4cc1e56e86b3127f442c0658eaaf5"
+    },
+    {
+      "path": "src/chess-reasoning/saved-score-presentation.ts",
+      "sha256": "16943533fa812f3311dec7a12cd796674328b458995ce21413d22212174ab018"
+    },
+    {
+      "path": "src/chess-reasoning/score-comparison-notices.ts",
+      "sha256": "74064bc6f46b8be71cdf7af47bf259001dafcd99b2db771866952e79c41cd9a5"
+    },
+    {
+      "path": "src/chess-reasoning/server-simple-policy.ts",
+      "sha256": "13f395f08c08d8e01508f556d0443c1b24b0dff15ca75774aa7d50488645e96d"
+    },
+    {
+      "path": "src/chess-reasoning/simple-agent-config.ts",
+      "sha256": "d68ec9db4a3e0ad65d5e773a7d710aea83c517fa5fc390310ca42818dac5019c"
+    },
+    {
+      "path": "src/chess-reasoning/simple-board-analysis.ts",
+      "sha256": "c86f80e597f21c5e61f248e486db1819ca053ad455c635838f511f592e01f4f1"
+    },
+    {
+      "path": "src/chess-reasoning/simple-compact-evidence.ts",
+      "sha256": "c2e40843fa2237e67818db605464e8a2e1215da642a799684d954c0bd826a455"
+    },
+    {
+      "path": "src/chess-reasoning/simple-completion.ts",
+      "sha256": "2d2c4552bf87bdba41fc644961d063cf5151fa5c635ac77f93a6689b0dd1ab56"
+    },
+    {
+      "path": "src/chess-reasoning/simple-engine-presentation.ts",
+      "sha256": "c38bf39e473d27108aab3bb76d93b0f92029e557f2666398eb2927ecdc24db20"
+    },
+    {
+      "path": "src/chess-reasoning/simple-evidence-preparation.ts",
+      "sha256": "bda062895d205d071dd9b00dfdbcd1024eec68507442d7ac1376fdc229f3eca1"
+    },
+    {
+      "path": "src/chess-reasoning/simple-evidence-view.ts",
+      "sha256": "b04fe531c528f2cfaa7905858f152c604f1706844b29bd1777425dcd5a5d38bc"
+    },
+    {
+      "path": "src/chess-reasoning/simple-explanation-coverage.ts",
+      "sha256": "795a5b34ed808be9839a9375e178750ce3b464b05cdc3237a23c58fe10dd4e08"
+    },
+    {
+      "path": "src/chess-reasoning/simple-fact-delivery.ts",
+      "sha256": "e848b0f7c0689cf516c19c7f3da1d217a12f38a011fa91e4220caf8ed4f7e01e"
+    },
+    {
+      "path": "src/chess-reasoning/simple-fallback-premise.ts",
+      "sha256": "7943b7268080c8f2b183c4f3b72c7aa200599f08dc65ffc3e8a912dfb5f0bcda"
+    },
+    {
+      "path": "src/chess-reasoning/simple-prose-references.ts",
+      "sha256": "249865423d3475856093ac5979f8ab81774becdad38594944302da8f62c9a151"
+    },
+    {
+      "path": "src/chess-reasoning/simple-runtime-version.ts",
+      "sha256": "aec1a0004a0d4bd359410dc001eccbd466c9334fc57d09200325c0a8205d57bd"
+    },
+    {
+      "path": "src/chess-reasoning/stable.ts",
+      "sha256": "221b99548784cf156479c460aadf069c59374ebab283de4e475d0125c8e21b01"
+    },
+    {
+      "path": "src/chess-reasoning/tool-input-loop-guard.ts",
+      "sha256": "46b819e95e0e1cfb7a848a1a9c1de5e734b6bb0ea2de1ac15c610a7dfbe90b48"
+    },
+    {
+      "path": "src/chess-reasoning/types.ts",
+      "sha256": "17e3fa5b2ce32861c2867e69cf5f55b7452ea4f27f17fd27fce652efd2ef6da6"
+    },
+    {
+      "path": "src/chess-reasoning/visible-support-lines.ts",
+      "sha256": "e0f04df606adf1e32ee93eb87de1f71e9079852aae26b325a111fe8c754aeb32"
+    },
+    {
+      "path": "src/chess-reasoning/wikibooks-index.ts",
+      "sha256": "da43cad4fbfb4f8afcf6ad1b0aa7f3cad540b91655c0178df59e6ac9d2287d57"
+    },
+    {
+      "path": "src/chess-reasoning/wikibooks-tool-context.ts",
+      "sha256": "a4431367ac7affb74d4d099021b22661c825a61962d298d1c45934f543e5ed22"
+    },
+    {
+      "path": "src/classifier-decision.ts",
+      "sha256": "1bc05e2efb28f942d64167aab6fd12d2b4e91bc7d3a7908d96c4f816772dfda0"
+    },
+    {
+      "path": "src/classifier-rules.ts",
+      "sha256": "c783654262d623cdb6b6833666922d48710fbf2881f86f57dabd0b2e2719fd7a"
+    },
+    {
+      "path": "src/player-perspective.ts",
+      "sha256": "f23ab644b6d8d6ede649fec94e5affab4231bf200f2825ef1658eae499a51470"
+    },
+    {
+      "path": "test/answer-pipeline.test.mjs",
+      "sha256": "811c7248ba4988aa8c1bd9ec49c0fa4cb81f9dab1f4a22d38edb86322647cb3e"
+    },
+    {
+      "path": "test-types.mts",
+      "sha256": "c7769163ffdca79fe570fc2ae8e233e35716a046f4935ab7499f1429072c543b"
+    },
+    {
+      "path": "tsconfig.json",
+      "sha256": "61f7c589511f45851c0d0bcdae130254f9e43bb7452343efd8e2f74762dca757"
+    }
+  ],
+  "standaloneNpmCi": true,
+  "standaloneBuild": true,
+  "standaloneTests": 11,
+  "packedConsumerNpmCi": true,
+  "packedConsumerTests": 11,
+  "typeConsumer": "strict NodeNext passed",
+  "limits": "Offline fixtures and process mocks; no real engine corpus, live model/provider, website deployment or physical-device qualification",
+  "postQualificationDocumentation": {
+    "changedFiles": [],
+    "verification": "Only repository README wording changed after passing source/packed runtime checks. Runtime, build scripts, tests and accepted dev.2 archive bytes unchanged.",
+    "artifactDocumentation": "Initial immutable dev.2 archive README retains earlier terminology; current repository README is corrected. Any future changed artifact requires a new version."
+  }
+}
