@@ -47,7 +47,9 @@ completed search outcomes separately. Preparation retains bounded error message,
 code and HTTP status, without stacks or headers. When every completed attempted
 search fails, `engineEvidenceStatus` is `unavailable` and the saved answer plainly
 discloses that engine analysis could not be completed. A successful later search
-clears that all-failed condition. Cancellation remains a failure, and answers
+clears that all-failed condition. The disclosure precedes final reference validation;
+causal claim and sentence-context ranges remain half-open UTF-16 offsets into
+the returned final answer. Cancellation remains a failure, and answers
 that request no searches are not labelled engine outages. Hosts can mark such
 unavailable answers degraded while retaining the pipeline's `diagnostic` status.
 
@@ -78,7 +80,8 @@ npm run pack:checked
 ```
 
 The source snapshot is recorded in `SOURCE-ORIGIN.json`. This private preview
-uses version `0.1.0-dev.3`; earlier `0.1.0-dev.1` and `0.1.0-dev.2` artifacts remain immutable.
+uses version `0.1.0-dev.4`; earlier `0.1.0-dev.1`, `0.1.0-dev.2` and
+`0.1.0-dev.3` artifacts remain immutable.
 Internal dependencies are pinned archives in `vendor/npm`. Update an existing
 dependency with `node scripts/update-dependency.mjs @knights-eye-chess/name
 /absolute/path/package.tgz`, then run `npm ci` and `npm run check`. Review the

@@ -650,6 +650,11 @@ export async function runPreparedAnswer(input: {
       }
     }
   }
+  const engineEvidenceStatus = searchesSucceeded > 0 ? 'available' as const
+    : searchesFailed > 0 && searchesSucceeded + searchesFailed === searchCount ? 'unavailable' as const
+    : searchCount > 0 ? 'unknown' as const : 'not-requested' as const;
+  const engineLimitation = 'Engine analysis was unavailable for this answer, so evaluations and tactical lines have not been verified with Stockfish.';
+  if (!failure && answer && engineEvidenceStatus === 'unavailable') answer = `${engineLimitation}\n\n${answer}`;
   let referenceValidation: ReturnType<typeof validateAnswerReferences>['referenceValidation'] & {supportingContinuations?: ReturnType<typeof visibleSupportLines>['additions']} | {status:'unavailable';reason:string};
   try {
     const validated = validateAnswerReferences(answer, input.bundle.context, visibleRecords(), acquiredMainLines.at(-1));
@@ -668,11 +673,6 @@ export async function runPreparedAnswer(input: {
     referenceValidation = {status:'unavailable',reason:'Reference validation could not complete; original answer retained.'};
   }
   trace('simple-reference-validation', 'output', referenceValidation);
-  const engineEvidenceStatus = searchesSucceeded > 0 ? 'available' as const
-    : searchesFailed > 0 && searchesSucceeded + searchesFailed === searchCount ? 'unavailable' as const
-    : searchCount > 0 ? 'unknown' as const : 'not-requested' as const;
-  const engineLimitation = 'Engine analysis was unavailable for this answer, so evaluations and tactical lines have not been verified with Stockfish.';
-  if (!failure && answer && engineEvidenceStatus === 'unavailable') answer = `${engineLimitation}\n\n${answer}`;
   const engineSearches = {searchesUsed:searchCount,searchesSucceeded,searchesFailed,engineEvidenceStatus};
   trace('simple-engine-evidence', 'output', {...engineSearches,status:engineEvidenceStatus === 'unavailable' ? 'degraded' : engineEvidenceStatus});
   if(completionReason) trace("simple-completion","output",{reason:completionReason,hasAnswer:Boolean(answer),...engineSearches,toolCallsUsed:toolCount});

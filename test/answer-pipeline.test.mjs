@@ -39,6 +39,32 @@ test('KE-AI-PORT-002: all failed preparation and tool searches retain causes and
  assert.ok(events.some(e=>e.stage==='simple-engine-evidence'&&e.payload.status==='degraded'&&e.payload.searchesFailed===4));
  assert.doesNotMatch(JSON.stringify(result.preparation),/private stack|private header/);
 });
+test('KE-AI-PORT-002: final causal claim ranges include outage disclosure and UTF-16 paragraph offsets',async()=>{
+ const prose='A quiet plan ♞ 🧩.\n\n[1. e4](game:0:e2e4) opens the bishop on f1 toward a6.\n\nA second view ♟: [1. e4](game:0:e2e4) clears the bishop on f1 toward a6.';
+ for(const outage of [true,false]) {
+  const events=[];
+  const result=await runAnswerPipeline(moveSetup(async()=>reply(prose),{
+   analyzer:outage?{async analyze(){throw Error('deterministic engine outage');}}:analyzer([]),
+   observableTraceSink:event=>events.push(event),
+  }));
+  assert.equal(result.engineEvidenceStatus,outage?'unavailable':'available');
+  assert.equal(result.referenceValidation.causalClaimCheckStatus,'completed');
+  const checks=result.referenceValidation.causalClaimChecks;
+  assert.equal(checks.length,2);
+  assert.ok(prose.length>[...prose].length,'fixture includes a UTF-16 surrogate pair');
+  for(const check of checks) {
+   assert.equal(result.answer.slice(check.claimRange.start,check.claimRange.end),check.claim);
+   assert.equal(result.answer.slice(check.sentenceContext.start,check.sentenceContext.end),check.sentenceContext.text);
+   assert.match(check.claim,/bishop on f1 toward a6/);
+  }
+  assert.deepEqual(events.find(event=>event.stage==='simple-reference-validation').payload.causalClaimChecks,checks);
+  if(outage)assert.match(result.answer,/^Engine analysis was unavailable/);
+  else assert.equal(result.answer,prose);
+ }
+});
+test('KE-AI-PORT-002: endpoint comparison descriptions explicitly require final analysis',()=>{
+ for(const name of ['test_line','test_game_line'])assert.match(simpleToolDescription(name),/compareFinalMovesUci requires analyzeFinal=true/);
+});
 test('KE-AI-PORT-002: recovery after failed preparation counts real successes and clears all-failed disclosure',async()=>{
  let turn=0,calls=0;const successful=analyzer([]);
  const result=await runAnswerPipeline(moveSetup(async()=>++turn===1?reply('',[{toolCallId:'recovered',toolName:'compare_moves',input:{phase:'before',movesUci:['e2e4','d2d4']}}]):reply('Both central pawn moves are available.'),
