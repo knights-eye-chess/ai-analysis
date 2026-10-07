@@ -53,6 +53,21 @@ the returned final answer. Cancellation remains a failure, and answers
 that request no searches are not labelled engine outages. Hosts can mark such
 unavailable answers degraded while retaining the pipeline's `diagnostic` status.
 
+Requirement KE-AI-PORT-003: optional observable traces pair input and output/error
+phase events for routing performed here, opponent preparation, classification
+refresh, observations, evidence construction, and the residual opening wait.
+These events use `deterministic`/`local-harness` identity so model-attempt and
+billing summaries exclude them. `invocationId` joins each pair; terminal
+`durationMs` measures that operation and
+`elapsedMs` is relative to pipeline entry. Opening lookup runs concurrently;
+its wait duration is only the remaining wait after chess evidence collection.
+No event is emitted for an operation that is skipped or routing already supplied
+by the host. Existing preparation/result diagnostics remain unchanged. Failed or
+cancelled operations emit a terminal timing event and preserve the original error
+and cancellation behavior. Phase events never include host error messages,
+credentials or chess payloads. Model/tool intervals remain separately measured;
+do not sum overlapping source lookup and engine intervals.
+
 Build independently with `npm install` and `npm run build` in the unpacked
 package. `src` is generated from canonical repository modules for packaging,
 never a second editable implementation. `npm test` runs the deterministic
@@ -80,8 +95,8 @@ npm run pack:checked
 ```
 
 The source snapshot is recorded in `SOURCE-ORIGIN.json`. This private preview
-uses version `0.1.0-dev.4`; earlier `0.1.0-dev.1`, `0.1.0-dev.2` and
-`0.1.0-dev.3` artifacts remain immutable.
+uses version `0.1.0-dev.6`; earlier `0.1.0-dev.1`, `0.1.0-dev.2`,
+`0.1.0-dev.3`, `0.1.0-dev.4` and `0.1.0-dev.5` artifacts remain immutable.
 Internal dependencies are pinned archives in `vendor/npm`. Update an existing
 dependency with `node scripts/update-dependency.mjs @knights-eye-chess/name
 /absolute/path/package.tgz`, then run `npm ci` and `npm run check`. Review the

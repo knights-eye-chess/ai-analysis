@@ -13,7 +13,7 @@ import { toLegacyPositionAnalysisProvider, type CompatiblePositionAnalysisProvid
 import type { ObservationProvider } from "./poc-contracts";
 import type { AnswerModelConnector } from "./answer-model-connector";
 import type { WikibooksIndex } from "./wikibooks-index";
-import type { ObservableLlmTraceSink } from "./ai-sdk-runtime-support";
+import { emitObservableTrace, type ObservableLlmTraceSink } from "./ai-sdk-runtime-support";
 import { createDefaultSaliencePolicy } from "./poc-observations";
 import { createPocToolHost } from "./poc-tools";
 import { runPreparedAnswer, SIMPLE_MODELS, SIMPLE_BUDGETS, SIMPLE_EXPANDED_BUDGETS, SIMPLE_RECOVERY_BUDGETS } from "./portable-answer-runtime";
@@ -53,7 +53,27 @@ export async function runAnswerPipeline(input: {
   let sourceTimer: ReturnType<typeof setTimeout> | undefined;
   try {
     const preparationStarted = performance.now();
-    const routing = input.routingPreparation ?? await input.prepareRouting();
+    let phaseSequence = 0;
+    // Paired phase events measure work before the model loop. They do not carry
+    // chess payloads or errors that might contain host transport credentials.
+    const timed = async <T>(stage: string, operation: () => T | Promise<T>, details: Record<string, unknown> = {}, phaseSignal = input.signal): Promise<T> => {
+      const started = performance.now();
+      const invocationId = `${input.requestId}:pipeline-phase:${++phaseSequence}`;
+      const trace = (direction: "input" | "output" | "error", payload: Record<string, unknown>) => emitObservableTrace(input.observableTraceSink, {
+        stage, direction, model: "deterministic", providerRoute: "local-harness", reasoningEffort: "none",
+        payload: { invocationId, ...details, ...payload, elapsedMs: performance.now() - preparationStarted },
+      });
+      trace("input", {});
+      try {
+        const result = await operation();
+        trace("output", { status: "completed", durationMs: performance.now() - started });
+        return result;
+      } catch (error) {
+        trace("error", { status: phaseSignal?.aborted ? "cancelled" : "failed", durationMs: performance.now() - started });
+        throw error;
+      }
+    };
+    const routing = input.routingPreparation ?? await timed("answer-pipeline-routing", input.prepareRouting);
     if(routing.question!==input.question||routing.selectionKey!==input.selected.selectionKey||routing.deliveryId!==input.selected.deliveryId)throw Error('stale-question-routing');
     const omitSelectedContext=routing.omitSelectedContext;
     if(input.signal?.aborted)throw input.signal.reason??Error('cancelled');
@@ -89,41 +109,49 @@ export async function runAnswerPipeline(input: {
     })() : undefined;
     const analyzer = input.analyzer ? toLegacyPositionAnalysisProvider(input.analyzer) : undefined;
     const baseSearchPlan = planInitialSearches({question:input.question,context:input.selected.context,mainLine:routing.mainLine,reviewGame:routing.decision.reviewGame,reviewSubject:routing.decision.reviewSubject,answerScope:routing.decision.answers?.answer_scope?.choice,classificationQuestion:classificationTargetAtSelection(routing.decision,input.question,input.selected.context).applies,omitSelectedContext,playerPerspective:input.playerPerspective});
-    const preparation = analyzer && !omitSelectedContext && !baseSearchPlan.requests.length ? await prepareOpponentThreats(input.selected.context, analyzer, input.signal, input.onProgress) : undefined;
+    const preparation = analyzer && !omitSelectedContext && !baseSearchPlan.requests.length
+      ? await timed("answer-pipeline-preparation", () => prepareOpponentThreats(input.selected.context, analyzer, input.signal, input.onProgress)) : undefined;
     const initialSearchPlan=withBranchPreparation(baseSearchPlan,input.selected.context,omitSelectedContext,DEFAULT_BRANCH_EXPANSION_MODE);
     input.onProgress?.("Refreshing move classification and candidate moves");
     const refreshed = preparation && input.bridge?.refreshContext
-      ? await input.bridge.refreshContext(input.selected, input.signal) : undefined;
+      ? await timed("answer-pipeline-classification-refresh", () => input.bridge!.refreshContext!(input.selected, input.signal), { origin: "opponent-threat-preparation" }) : undefined;
     // Never reuse a pre-search snapshot when no refresh capability is available.
     const existingAnalysis = refreshed?.existingAnalysis ?? (preparation ? null : input.selected.existingAnalysis);
     input.onProgress?.("Collecting compact chess evidence");
     // Include attributed current board context; never include future recorded play.
-    const boardAnalysis = simpleBoardAnalysis(input.selected.context, existingAnalysis, input.selected.edgeId);
-    const provider = input.observationProvider;
-    const observations = input.selected.context.kind === "position" ? { schemaVersion: REASONING_POC_VERSION, contextHash: reasoningContextHash(input.selected.context), observations: [], evidence: [createContextEvidence(input.selected.context)], providers: [{ provider: "validated-starting-position", version: "1" }], limitations: [] } : await provider.observe(input.selected.context, DEFAULT_REASONING_RUN_CONTROLS, input.signal);
-    const contract = createQueryContract({ requestId: input.requestId, question: input.question, context: input.selected.context });
-    const rankedObservations = createDefaultSaliencePolicy(DEFAULT_REASONING_RUN_CONTROLS.maxObservationsPresented).rank(observations, contract);
-    const bundle = captureAblationOriginalEvidenceBundle({ context: input.selected.context, question: input.question,
-      observations, rankedObservations, retainAllExactFacts: true });
-    const hostOptions = { ...(analyzer ? { analyzer } : {}), defaultDepth:18, minimumDepth:18, maxDepth:18, maxRootMoves:6, leadingAlternative:boardAnalysis?.leadingAlternative };
-    const baseHost = createPocToolHost(input.selected.context, hostOptions);
-    const expandedOptions={...hostOptions,branchExpansion:BRANCH_EXPANSION_OPTIONS};
-    const expandedHost=createPocToolHost(input.selected.context,expandedOptions);
-    // Freeze one validated record per answer; later navigation cannot replace it.
-    let mainLine = routing.mainLine;
-    const getMainLine = async (signal?:AbortSignal) => mainLine ?? (mainLine = await input.bridge!.getMainLine!(input.selected,signal));
-    const ordinaryHost = (initialSearchPlan && (mainLine || input.bridge?.getMainLine)
-      ? withRecordedPositionTools(input.selected.context,baseHost,hostOptions,getMainLine) : baseHost);
-    const expandedRecordedHost=initialSearchPlan && (mainLine || input.bridge?.getMainLine)
-      ? withRecordedPositionTools(input.selected.context,expandedHost,expandedOptions,getMainLine) : expandedHost;
-    const host=selectBranchHost(memoizeToolResults(ordinaryHost),memoizeToolResults(expandedRecordedHost),DEFAULT_BRANCH_EXPANSION_MODE);
-    const openingSourceContext = await openingLookup;
+    const { boardAnalysis, observations } = await timed("answer-pipeline-observations", async () => {
+      const boardAnalysis = simpleBoardAnalysis(input.selected.context, existingAnalysis, input.selected.edgeId);
+      const provider = input.observationProvider;
+      const observations = input.selected.context.kind === "position" ? { schemaVersion: REASONING_POC_VERSION, contextHash: reasoningContextHash(input.selected.context), observations: [], evidence: [createContextEvidence(input.selected.context)], providers: [{ provider: "validated-starting-position", version: "1" }], limitations: [] } : await provider.observe(input.selected.context, DEFAULT_REASONING_RUN_CONTROLS, input.signal);
+      return { boardAnalysis, observations };
+    });
+    const { bundle, hostOptions, expandedOptions, host, getMainLine } = await timed("answer-pipeline-evidence-collection", () => {
+      const contract = createQueryContract({ requestId: input.requestId, question: input.question, context: input.selected.context });
+      const rankedObservations = createDefaultSaliencePolicy(DEFAULT_REASONING_RUN_CONTROLS.maxObservationsPresented).rank(observations, contract);
+      const bundle = captureAblationOriginalEvidenceBundle({ context: input.selected.context, question: input.question,
+        observations, rankedObservations, retainAllExactFacts: true });
+      const hostOptions = { ...(analyzer ? { analyzer } : {}), defaultDepth:18, minimumDepth:18, maxDepth:18, maxRootMoves:6, leadingAlternative:boardAnalysis?.leadingAlternative };
+      const baseHost = createPocToolHost(input.selected.context, hostOptions);
+      const expandedOptions={...hostOptions,branchExpansion:BRANCH_EXPANSION_OPTIONS};
+      const expandedHost=createPocToolHost(input.selected.context,expandedOptions);
+      // Freeze one validated record per answer; later navigation cannot replace it.
+      let mainLine = routing.mainLine;
+      const getMainLine = async (signal?:AbortSignal) => mainLine ?? (mainLine = await input.bridge!.getMainLine!(input.selected,signal));
+      const ordinaryHost = (initialSearchPlan && (mainLine || input.bridge?.getMainLine)
+        ? withRecordedPositionTools(input.selected.context,baseHost,hostOptions,getMainLine) : baseHost);
+      const expandedRecordedHost=initialSearchPlan && (mainLine || input.bridge?.getMainLine)
+        ? withRecordedPositionTools(input.selected.context,expandedHost,expandedOptions,getMainLine) : expandedHost;
+      const host=selectBranchHost(memoizeToolResults(ordinaryHost),memoizeToolResults(expandedRecordedHost),DEFAULT_BRANCH_EXPANSION_MODE);
+      return { bundle, hostOptions, expandedOptions, host, getMainLine };
+    });
+    const openingSourceContext = openingLookup ? await timed("answer-pipeline-opening-wait", () => openingLookup) : undefined;
     const preModelElapsedMs = Math.max(sourceTimedOut ? sourceDeadlineMs : 0, performance.now() - preparationStarted + (input.routingPreparation?.elapsedMs??0));
     const result = await runPreparedAnswer({ ...input, bundle, host, boardAnalysis, preparation, openingSourceContext, initialSearchPlan,
       refreshPreparedBoardAnalysis: async signal => {
         hostOptions.leadingAlternative=undefined;
         expandedOptions.leadingAlternative=undefined;
-        const fresh=await input.bridge?.refreshContext?.(input.selected,signal);
+        const fresh=input.bridge?.refreshContext
+          ? await timed("answer-pipeline-classification-refresh", () => input.bridge!.refreshContext!(input.selected,signal), { origin: "initial-search-preparation" }, signal) : undefined;
         const analysis=simpleBoardAnalysis(input.selected.context,fresh?.existingAnalysis??null,input.selected.edgeId);
         hostOptions.leadingAlternative=analysis?.leadingAlternative;
         expandedOptions.leadingAlternative=analysis?.leadingAlternative;

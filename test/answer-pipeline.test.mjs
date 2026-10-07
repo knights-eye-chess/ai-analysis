@@ -23,6 +23,82 @@ function moveSetup(invoke,options={}) {
   prepareRouting:async()=>({question,selectionKey:'e1',deliveryId:'answer-test',elapsedMs:0,omitSelectedContext:false,
    decision:{version:QUESTION_ROUTING_VERSION,status:'fallback',omitSelectedContext:false,includeGameRecord:false,reviewGame:false,reason:'test-selected-move',answers:{answer_scope:{choice:'move_explanation',confidence:1}}}}),...options});
 }
+test('KE-AI-PORT-003: preparation, classification and observations have separate measured intervals',async t=>{
+ let clock=100,turns=0;const events=[],searches=[];
+ t.mock.method(performance,'now',()=>clock);
+ const successful=analyzer(searches);
+ const input=moveSetup(async()=>{turns++;return reply('The pawn occupies the centre.');});
+ const route=input.prepareRouting,provider=input.observationProvider;
+ input.prepareRouting=async()=>{clock+=7;return route();};
+ input.analyzer={async analyze(request){clock+=searches.length?17:11;return successful.analyze(request);}};
+ input.bridge={async refreshContext(){clock+=42;return {existingAnalysis:null};}};
+ input.observationProvider={async observe(...args){clock+=13;return provider.observe(...args);}};
+ input.observableTraceSink=event=>events.push(event);
+ const result=await runAnswerPipeline(input);
+ assert.equal(result.answer,'The pawn occupies the centre.');assert.equal(turns,1);assert.equal(searches.length,2);
+ const phases=events.filter(event=>event.stage.startsWith('answer-pipeline-'));
+ assert.deepEqual(phases.filter(e=>e.direction==='output').map(e=>[e.stage,e.payload.durationMs]),[
+  ['answer-pipeline-routing',7],['answer-pipeline-preparation',28],
+  ['answer-pipeline-classification-refresh',42],['answer-pipeline-observations',13],
+  ['answer-pipeline-evidence-collection',0],
+ ]);
+ const ids=new Set();
+ for(let i=0;i<phases.length;i+=2){
+  const [start,end]=phases.slice(i,i+2);
+  for(const event of [start,end]){
+   assert.equal(event.model,'deterministic');assert.equal(event.providerRoute,'local-harness');assert.equal(event.reasoningEffort,'none');
+  }
+  assert.equal(start.direction,'input');assert.equal(end.direction,'output');assert.equal(end.payload.status,'completed');
+  assert.equal(start.payload.invocationId,end.payload.invocationId);assert.equal(start.stage,end.stage);
+  assert.equal(end.payload.elapsedMs-start.payload.elapsedMs,end.payload.durationMs);
+  assert.equal(ids.has(start.payload.invocationId),false);ids.add(start.payload.invocationId);
+ }
+ assert.equal(events.find(e=>e.stage==='simple-preparation').payload.elapsedMs,28);
+});
+test('KE-AI-PORT-003: classification failure and cancellation retain their original error and a terminal duration',async t=>{
+ let clock=0;t.mock.method(performance,'now',()=>clock);
+ for(const cancelled of [false,true]){
+  const controller=new AbortController(),events=[];let turns=0;
+  const failure=new Error('host-private-error-message');
+  const input=moveSetup(async()=>{turns++;return reply('Must not run.');},{analyzer:analyzer([]),signal:controller.signal,
+   bridge:{async refreshContext(){clock+=23;if(cancelled)controller.abort(failure);throw failure;}},
+   observableTraceSink:event=>events.push(event)});
+  await assert.rejects(runAnswerPipeline(input),error=>error===failure);assert.equal(turns,0);
+  const phase=events.filter(event=>event.stage==='answer-pipeline-classification-refresh');
+  assert.equal(phase.length,2);assert.equal(phase[0].direction,'input');assert.equal(phase[1].direction,'error');
+  assert.equal(phase[1].payload.status,cancelled?'cancelled':'failed');assert.equal(phase[1].payload.durationMs,23);
+  assert.equal(phase[0].payload.invocationId,phase[1].payload.invocationId);
+  assert.doesNotMatch(JSON.stringify(phase),/host-private-error-message/);
+ }
+});
+test('KE-AI-PORT-003: initial-search refresh failure remains recoverable and supplied routing is not remeasured',async()=>{
+ const events=[],input=setup(async()=>reply('The position permits development.'),{analyzer:analyzer([]),
+  bridge:{async refreshContext(){throw Error('refresh unavailable');}},observableTraceSink:event=>events.push(event)});
+ input.routingPreparation=await input.prepareRouting();input.prepareRouting=()=>{throw Error('supplied routing must be reused');};
+ const result=await runAnswerPipeline(input);
+ assert.equal(result.answer,'The position permits development.');
+ assert.equal(events.some(event=>event.stage==='answer-pipeline-routing'),false);
+ const phase=events.find(event=>event.stage==='answer-pipeline-classification-refresh'&&event.direction==='error');
+ assert.equal(phase.payload.origin,'initial-search-preparation');assert.equal(phase.payload.status,'failed');
+ assert.ok(Number.isFinite(phase.payload.durationMs));assert.ok(phase.payload.durationMs>=0);
+});
+test('KE-AI-PORT-003: overlapping opening lookup measures only its remaining wait',async t=>{
+ let clock=0,finishOpening;const events=[];t.mock.method(performance,'now',()=>clock);
+ const pendingOpening=new Promise(resolve=>{finishOpening=resolve;});
+ const source={status:'unavailable',contextHash:'no-source',pages:[],requestCount:0,networkRequestCount:0,
+  networkRequestedTitles:[],localIndexCandidateCount:0,localIndexPositionCheckCount:0,
+  localIndexSelectedTitleCount:0,cacheHitTitleCount:0,timingMs:41,limitations:[]};
+ const input=moveSetup(async()=>reply('The pawn occupies the centre.'),{
+  analyzer:analyzer([]),openingSession:{initial:()=>pendingOpening},
+  bridge:{async refreshContext(){clock+=8;return {existingAnalysis:null};}},
+  observableTraceSink:event=>{events.push(event);if(event.stage==='answer-pipeline-opening-wait'&&event.direction==='input'){clock+=33;finishOpening(source);}},
+ });
+ const result=await runAnswerPipeline(input);
+ assert.equal(result.answer,'The pawn occupies the centre.');
+ const phase=events.filter(event=>event.stage==='answer-pipeline-opening-wait');
+ assert.equal(phase.length,2);assert.equal(phase[0].payload.elapsedMs,8);
+ assert.equal(phase[1].payload.durationMs,33);assert.equal(phase[1].payload.elapsedMs,41);
+});
 test('KE-AI-PORT-002: all failed preparation and tool searches retain causes and disclose degraded answers',async()=>{
  let turn=0,calls=0;const events=[];
  const result=await runAnswerPipeline(moveSetup(async request=>{
