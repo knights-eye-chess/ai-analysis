@@ -501,7 +501,15 @@ export function createPocToolHost(contextInput: ReasoningPositionContext, option
     signal?.throwIfAborted();
     const reserve=additional ? (execution?.reserveSearch ? execution.reserveAdditionalSearch : undefined) : execution?.reserveSearch;
     if (reserve && !reserve()) throw Object.assign(new Error("Engine search budget exhausted"), {code:"search-budget-exhausted",field:"searches",expected:"remaining engine search slot"});
-    const analysis = scopePositionAnalysis(await options.analyzer.analyze(request), request);
+    let analysis: ReturnType<typeof scopePositionAnalysis>;
+    try {
+      analysis = scopePositionAnalysis(await options.analyzer.analyze(request), request);
+      signal?.throwIfAborted();
+    } catch (error) {
+      if (!signal?.aborted) execution?.recordSearchOutcome?.('failed');
+      throw error;
+    }
+    execution?.recordSearchOutcome?.('succeeded');
     return { ...analysis, searchScope: { fen: request.fen, requestedDepth: depth,
       command:analysis.command,
       minimumPvPlies: minimumPvPlies ?? 1,

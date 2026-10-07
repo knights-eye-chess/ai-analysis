@@ -14,6 +14,72 @@ function setup(invoke,options={}) {
 }
 function reply(text='',toolCalls=[]) {return {text,toolCalls,finishReason:toolCalls.length?'tool-calls':'stop',usage:{inputTokens:20,outputTokens:10},response:{messages:[{role:'assistant',content:toolCalls.length?toolCalls.map(c=>({type:'tool-call',...c})):text}]}};}
 function analyzer(log) {return {async analyze(request){log.push(request);const board=new Chess(request.fen);const legal=board.moves({verbose:true});const roots=request.rootMoves.length?request.rootMoves:legal.slice(0,request.multiPv).map(m=>m.from+m.to+(m.promotion??''));return {engine:'deterministic-legal-test',engineBuild:'test-only',command:'test',bestMove:roots[0]??null,lines:roots.map(root=>{const b=new Chess(request.fen);b.move({from:root.slice(0,2),to:root.slice(2,4),promotion:root.slice(4)||undefined});const pv=[root];while(pv.length<(request.minimumPvPlies??1)&&!b.isGameOver()){const m=b.moves({verbose:true})[0];pv.push(m.from+m.to+(m.promotion??''));b.move(m);}return {rootMove:root,pv,depth:request.depth,nodes:1,scoreCp:0,matePly:null};})};}};}
+function moveSetup(invoke,options={}) {
+ const board=new Chess();board.move('e4');
+ const moveContext={...context,kind:undefined,nodeId:'e1',moveUci:'e2e4',moveSan:'e4',fenAfter:board.fen()};
+ const question='What is the idea behind this move?';
+ return setup(invoke,{question,selected:{deliveryId:'answer-test',selectionKey:'e1',edgeId:'e1',context:moveContext,existingAnalysis:null},
+  observationProvider:createProductionObservationProvider({context:moveContext,question}),
+  prepareRouting:async()=>({question,selectionKey:'e1',deliveryId:'answer-test',elapsedMs:0,omitSelectedContext:false,
+   decision:{version:QUESTION_ROUTING_VERSION,status:'fallback',omitSelectedContext:false,includeGameRecord:false,reviewGame:false,reason:'test-selected-move',answers:{answer_scope:{choice:'move_explanation',confidence:1}}}}),...options});
+}
+test('KE-AI-PORT-002: all failed preparation and tool searches retain causes and disclose degraded answers',async()=>{
+ let turn=0,calls=0;const events=[];
+ const result=await runAnswerPipeline(moveSetup(async request=>{
+  turn++;
+  if(turn===1)return reply('',[{toolCallId:'compare-before',toolName:'compare_moves',input:{phase:'before',movesUci:['e2e4','d2d4']}}]);
+  if(turn===2){assert.match(JSON.stringify(request.messages),/engine-503/);return reply('',[{toolCallId:'compare-after',toolName:'compare_moves',input:{phase:'after',movesUci:['e7e5','c7c5']}}]);}
+  return reply('The pawn occupies the centre.');
+ },{analyzer:{async analyze(){calls++;throw Object.assign(new Error('engine-503: unavailable'),{code:'engine-unavailable',status:503,cause:new Error('upstream unreachable'),stack:'private stack',headers:{Authorization:'private header'}});}},observableTraceSink:e=>events.push(e)}));
+ assert.equal(result.status,'diagnostic');assert.equal(calls,4);assert.equal(result.searchesUsed,4);
+ assert.equal(result.searchesSucceeded,0);assert.equal(result.searchesFailed,4);assert.equal(result.engineEvidenceStatus,'unavailable');
+ assert.match(result.answer,/^Engine analysis was unavailable.*not been verified with Stockfish\.\n\nThe pawn occupies/);
+ assert.equal(result.preparation.searchesFailed,2);assert.deepEqual(result.preparation.rawRecords,[]);
+ for(const entry of result.preparation.investigationLeads.unavailable){assert.equal(entry.error,'engine-503: unavailable');assert.equal(entry.code,'engine-unavailable');assert.equal(entry.status,503);assert.equal(entry.cause,'upstream unreachable');assert.equal('stack' in entry,false);assert.equal('headers' in entry,false);}
+ assert.ok(events.some(e=>e.stage==='simple-engine-evidence'&&e.payload.status==='degraded'&&e.payload.searchesFailed===4));
+ assert.doesNotMatch(JSON.stringify(result.preparation),/private stack|private header/);
+});
+test('KE-AI-PORT-002: recovery after failed preparation counts real successes and clears all-failed disclosure',async()=>{
+ let turn=0,calls=0;const successful=analyzer([]);
+ const result=await runAnswerPipeline(moveSetup(async()=>++turn===1?reply('',[{toolCallId:'recovered',toolName:'compare_moves',input:{phase:'before',movesUci:['e2e4','d2d4']}}]):reply('Both central pawn moves are available.'),
+  {analyzer:{async analyze(request){calls++;if(calls<=2)throw Error('offline');return successful.analyze(request);}}}));
+ assert.equal(result.status,'diagnostic');assert.equal(result.searchesUsed,3);assert.equal(result.searchesSucceeded,1);assert.equal(result.searchesFailed,2);
+ assert.equal(result.engineEvidenceStatus,'available');assert.equal(result.answer,'Both central pawn moves are available.');
+});
+test('KE-AI-PORT-002: initial search failures and later successes count analyzer dispatches, not tools',async()=>{
+ let turn=0,calls=0;const successful=analyzer([]);
+ const result=await runAnswerPipeline(setup(async()=>++turn===1?reply('',[{toolCallId:'recover',toolName:'compare_moves',input:{phase:'before',movesUci:['e2e4','d2d4']}}]):reply('A bounded assessment.'),
+  {analyzer:{async analyze(request){calls++;if(calls===1)throw Error('initial engine unavailable');return successful.analyze(request);}}}));
+ assert.equal(result.initialSearches[0].status,'failed');assert.equal(result.searchesUsed,2);assert.equal(result.searchesSucceeded,1);assert.equal(result.searchesFailed,1);assert.equal(result.engineEvidenceStatus,'available');
+});
+test('KE-AI-PORT-002: endpoint failures within one successful tool remain failed searches',async()=>{
+ let calls=0;const successful=analyzer([]);
+ const result=await runAnswerPipeline(setup(async()=>reply('Only the initial engine lines are available.'),
+  {analyzer:{async analyze(request){calls++;if(calls>1)throw Error('endpoint unavailable');const value=await successful.analyze(request);return {...value,lines:value.lines.map(line=>({...line,pv:[line.rootMove]}))};}}}));
+ assert.equal(result.initialSearches[0].status,'completed');assert.equal(calls,4);assert.equal(result.searchesUsed,4);
+ assert.equal(result.searchesSucceeded,1);assert.equal(result.searchesFailed,3);assert.equal(result.engineEvidenceStatus,'available');
+ assert.equal(result.answer,'Only the initial engine lines are available.');
+});
+test('KE-AI-PORT-002: a partial search batch counts failed dispatches separately from successful queries',async()=>{
+ let turn=0,calls=0;const successful=analyzer([]);
+ const result=await runAnswerPipeline(setup(async request=>{
+  if(++turn===1)return reply('',[{toolCallId:'partial-batch',toolName:'search_batch',input:{requests:[
+   {queryId:'central',tool:'compare_moves',input:{phase:'before',movesUci:['e2e4','d2d4']}},
+   {queryId:'knights',tool:'compare_moves',input:{phase:'before',movesUci:['g1f3','b1c3']}}]}}]);
+  assert.match(JSON.stringify(request.messages),/batch search unavailable/);return reply('The central pawn comparison is available.');
+ },{analyzer:{async analyze(request){calls++;if(calls===2)return successful.analyze(request);throw Error('batch search unavailable');}}}));
+ assert.equal(result.toolRuns[0].status,'completed');assert.deepEqual(result.toolRuns[0].result.searches.map(s=>s.status),['completed','failed']);
+ assert.equal(calls,3);assert.equal(result.searchesUsed,3);assert.equal(result.searchesSucceeded,1);assert.equal(result.searchesFailed,2);assert.equal(result.engineEvidenceStatus,'available');
+ assert.equal(result.answer,'The central pawn comparison is available.');
+});
+test('KE-AI-PORT-002: no engine requested and cancelled searches do not become outage disclosures',async()=>{
+ const noEngine=await runAnswerPipeline(setup(async()=>reply('A positional explanation.')));
+ assert.equal(noEngine.engineEvidenceStatus,'not-requested');assert.equal(noEngine.searchesFailed,0);assert.equal(noEngine.answer,'A positional explanation.');
+ const controller=new AbortController();let calls=0,turn=0;const successful=analyzer([]);
+ const cancelled=await runAnswerPipeline(moveSetup(async()=>++turn===1?reply('',[{toolCallId:'cancel-search',toolName:'compare_moves',input:{phase:'before',movesUci:['e2e4','d2d4']}}]):reply('This must not run.'),
+  {signal:controller.signal,analyzer:{async analyze(request){calls++;if(calls<=2)return successful.analyze(request);controller.abort(new Error('explicit cancellation'));throw Error('stopped');}}}));
+ assert.equal(cancelled.status,'failure');assert.equal(cancelled.answer,'');assert.equal(cancelled.searchesUsed,3);assert.equal(cancelled.searchesFailed,0);
+});
 test('KE-AI-PORT-001: existing preparation, genuine legal tools, resumable evidence and composition',async()=>{
  let turn=0;const searches=[];const events=[];
  const result=await runAnswerPipeline(setup(async request=>{

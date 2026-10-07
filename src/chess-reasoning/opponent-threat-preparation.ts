@@ -2,6 +2,7 @@ import { Chess } from "chess.js";
 import type { ReasoningPositionContext } from "./poc-contracts";
 import type { PositionAnalysisProvider, PositionAnalysisRequest, PositionAnalysisResult } from "./poc-tools";
 import { SIMPLE_EVIDENCE_PREPARATION_VERSION, type SimpleEvidencePreparation } from "./simple-evidence-preparation";
+import { engineSearchFailure } from './engine-search-failure';
 
 type Scope = "hypothetical-opponent-turn-before" | "actual-after";
 type LeadLine = { root: string; uci: string; san: string; depth: number; scoreCp: number | null; matePly: number | null; shorterThanRequested: boolean };
@@ -13,8 +14,9 @@ export async function prepareOpponentThreats(context: ReasoningPositionContext, 
   const started = performance.now();
   const rawRecords: { scope: Scope; fen: string; request: Omit<PositionAnalysisRequest, "signal">; result: PositionAnalysisResult }[] = [];
   const probes: Record<string, unknown>[] = [];
-  const unavailable: { scope: Scope; reason: string }[] = [];
+  const unavailable: ({ scope: Scope; reason: string } & Partial<ReturnType<typeof engineSearchFailure>>)[] = [];
   let searchCount: 0 | 1 | 2 = 0;
+  let searchesSucceeded = 0, searchesFailed = 0;
   const targets: { scope: Scope; fen: string; depth: number }[] = [];
   try {
     const before = new Chess(context.fenBefore);
@@ -29,16 +31,20 @@ export async function prepareOpponentThreats(context: ReasoningPositionContext, 
   targets.push({ scope: "actual-after", fen: context.fenAfter, depth: 20 });
   for (const target of targets) {
     signal?.throwIfAborted();
+    let dispatched = false, completed = false;
     try {
       if (new Chess(target.fen).isGameOver()) {
         unavailable.push({ scope: target.scope, reason: "terminal-position" });
         continue;
       }
       const request = { fen: target.fen, rootMoves: [], depth: target.depth, multiPv: 3, minimumPvPlies: 10 };
+      dispatched = true;
       searchCount = (searchCount + 1) as 1 | 2;
       onProgress?.(`Examining ${target.scope === "actual-after" ? "opponent responses" : "potential opponent plans"} · depth ${target.depth}`);
       const result = await engine.analyze({ ...request, signal });
       signal?.throwIfAborted();
+      searchesSucceeded++;
+      completed = true;
       rawRecords.push({ scope: target.scope, fen: target.fen, request, result });
       const lines: LeadLine[] = [];
       for (const line of result.lines) {
@@ -57,12 +63,13 @@ export async function prepareOpponentThreats(context: ReasoningPositionContext, 
         perspective: target.fen.split(" ")[1] === "w" ? "white" : "black",
         units: "centipawns; positive favors perspective; matePly is signed mate-in-moves (legacy name)",
         coveredRoots: lines.map(line => line.root), lines });
-    } catch {
+    } catch (error) {
       signal?.throwIfAborted();
-      unavailable.push({ scope: target.scope, reason: "probe-unavailable" });
+      if (dispatched && !completed) searchesFailed++;
+      unavailable.push({ scope: target.scope, reason: "probe-unavailable", ...engineSearchFailure(error) });
     }
   }
-  return { version: SIMPLE_EVIDENCE_PREPARATION_VERSION, searchCount, elapsedMs: performance.now() - started,
+  return { version: SIMPLE_EVIDENCE_PREPARATION_VERSION, searchCount, searchesSucceeded, searchesFailed, elapsedMs: performance.now() - started,
     rawRecords, investigationLeads: { version: "opponent-threat-leads/2", fenBefore: context.fenBefore, fenAfter: context.fenAfter, probes, unavailable,
       limitation: "Investigation leads, NOT registered/citable evidence. Hypothetical before flips only turn and clears en-passant: skipping is not a legal move. FEN-root searches omit prior repetition history. These scores are not a measured value of the selected move. Top 3 roots only, not exhaustive defense coverage. Raw engine records retained in diagnostic; tactical geometry omitted here. Use ordinary tools to validate relevant actual lines, captures, checks and recaptures and register interactive references. Do not turn an incidental opponent blunder into the purpose of the move." } };
 }

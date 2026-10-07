@@ -229,6 +229,10 @@ export async function runPreparedAnswer(input: {
   let failureDetails: AiFailureDetails | undefined;
   let completionReason: string | null = null;
   let toolCount = 0, searchCount = input.preparation?.searchCount ?? 0, outputTokens = 0, answer = "", failure: string | null = null, contractFailure = false;
+  // Legacy preparation remains accepted; known retained records establish only
+  // their own completed outcomes, never an assumed success for missing records.
+  let searchesSucceeded = input.preparation?.searchesSucceeded ?? (input.preparation?.result ? 1 : input.preparation?.rawRecords?.length ?? 0);
+  let searchesFailed = input.preparation?.searchesFailed ?? (input.preparation?.failure ? input.preparation.searchCount : 0);
   // Count engine dispatches for diagnostics; cancellation/time, not a count quota, gates them.
   const execution = { reserveAdditionalSearch: () => {
     controller.signal.throwIfAborted();
@@ -238,6 +242,8 @@ export async function runPreparedAnswer(input: {
     controller.signal.throwIfAborted();
     searchCount++;
     return true;
+  }, recordSearchOutcome: (outcome: 'succeeded' | 'failed') => {
+    if (outcome === 'succeeded') searchesSucceeded++; else searchesFailed++;
   } };
   const trace = (stage: string, direction: "input" | "output" | "error", payload: Record<string, unknown>) => emitObservableTrace(input.observableTraceSink,
     { stage, direction, model: input.modelName, providerRoute: input.providerRoute ?? "model-turn", reasoningEffort: input.effort ?? "medium", payload });
@@ -358,7 +364,7 @@ export async function runPreparedAnswer(input: {
     ...(coverageEnabled?{legalInvestigationRoots:legalInvestigationRoots(input.bundle.context)}:{}),
     ...(input.preparation?.investigationLeads?{investigationLeads:input.preparation.investigationLeads}:{}),
     ...(openingSourceContext?{openingSourceContext}:{}),
-    ...(input.preparation?{preparation:{searchesUsed:input.preparation.searchCount,limitation:'Prepared continuations are bounded evidence, not a purpose inference.'}}:{})});
+    ...(input.preparation?{preparation:{searchesUsed:input.preparation.searchCount,searchesSucceeded,searchesFailed,limitation:'Prepared continuations are bounded evidence, not a purpose inference.'}}:{})});
   let gameView:Record<string,unknown>|undefined;
   if(initialGameRecord){
     const record=Object.fromEntries(Object.entries(initialGameRecord.recordedMainLine).filter(([key])=>!["selectedIndex","selectedAtStart","selectedOnMainLine"].includes(key)));
@@ -662,10 +668,17 @@ export async function runPreparedAnswer(input: {
     referenceValidation = {status:'unavailable',reason:'Reference validation could not complete; original answer retained.'};
   }
   trace('simple-reference-validation', 'output', referenceValidation);
-  if(completionReason) trace("simple-completion","output",{reason:completionReason,hasAnswer:Boolean(answer),searchesUsed:searchCount,toolCallsUsed:toolCount});
-  return { preparationConsolidation:consolidatedPreparation.diagnostics, referenceValidation, completionReason, toolCallsUsed:toolCount, initialSearches, ...(coverageEnabled?{explanationCoverage:{...explanationCoverage(input.bundle.context,visibleRecords(),review),stopRepairs,reviewCount,qualificationRequested},recurringMotifs:explanationSummary(input.bundle.context,visibleRecords())}:{}),preparation: input.preparation, searchesUsed: searchCount, acquiredMainLines, status: failure ? "failure" as const : "diagnostic" as const, answer, failure, failureDetails, diagnostics, toolRuns,
+  const engineEvidenceStatus = searchesSucceeded > 0 ? 'available' as const
+    : searchesFailed > 0 && searchesSucceeded + searchesFailed === searchCount ? 'unavailable' as const
+    : searchCount > 0 ? 'unknown' as const : 'not-requested' as const;
+  const engineLimitation = 'Engine analysis was unavailable for this answer, so evaluations and tactical lines have not been verified with Stockfish.';
+  if (!failure && answer && engineEvidenceStatus === 'unavailable') answer = `${engineLimitation}\n\n${answer}`;
+  const engineSearches = {searchesUsed:searchCount,searchesSucceeded,searchesFailed,engineEvidenceStatus};
+  trace('simple-engine-evidence', 'output', {...engineSearches,status:engineEvidenceStatus === 'unavailable' ? 'degraded' : engineEvidenceStatus});
+  if(completionReason) trace("simple-completion","output",{reason:completionReason,hasAnswer:Boolean(answer),...engineSearches,toolCallsUsed:toolCount});
+  return { preparationConsolidation:consolidatedPreparation.diagnostics, referenceValidation, completionReason, toolCallsUsed:toolCount, initialSearches, ...(coverageEnabled?{explanationCoverage:{...explanationCoverage(input.bundle.context,visibleRecords(),review),stopRepairs,reviewCount,qualificationRequested},recurringMotifs:explanationSummary(input.bundle.context,visibleRecords())}:{}),preparation: input.preparation, ...engineSearches, acquiredMainLines, status: failure ? "failure" as const : "diagnostic" as const, answer, failure, failureDetails, diagnostics, toolRuns,
     elapsedMs: performance.now() - started + preparationMs, initialEvidenceIds: [...initialPreparedEvidenceIds,...(omitSelectedContext?[]:[...new Set([...initial.evidence.map(e => e.id),...(selectedContextRecord?[selectedContextRecord.id]:[])])]), ...(!omitSelectedContext && input.boardAnalysis ? [input.boardAnalysis.record.id] : [])], presentedEvidenceIds: [...visibleIds],
     presentedEvidence: [...known.values()].filter(record => visibleIds.has(record.id)), openingSources:[...openingSources.values()],
     ...(subagentEvaluation ? {evaluationTransport:{...subagentEvaluation,metering:"unavailable",outputBudgetReserved:outputTokens}} : {}),
-    usage: { inputTokens: diagnostics.reduce((n, d) => n + d.inputTokens, 0), outputTokens, metering:(unmeteredCalls||unmeteredInputCalls) ? "partly-unavailable" as const : "reported" as const, reportedOutputTokens:unmeteredCalls ? null : reportedOutputTokens, outputBudgetReservation, unmeteredCalls, reportedInputTokens:unmeteredInputCalls ? null : reportedInputTokens, unmeteredInputCalls }, limitations: [SIMPLE_DISCLOSURE] };
+    usage: { inputTokens: diagnostics.reduce((n, d) => n + d.inputTokens, 0), outputTokens, metering:(unmeteredCalls||unmeteredInputCalls) ? "partly-unavailable" as const : "reported" as const, reportedOutputTokens:unmeteredCalls ? null : reportedOutputTokens, outputBudgetReservation, unmeteredCalls, reportedInputTokens:unmeteredInputCalls ? null : reportedInputTokens, unmeteredInputCalls }, limitations: [SIMPLE_DISCLOSURE, ...(engineEvidenceStatus === 'unavailable' ? [engineLimitation] : [])] };
 }

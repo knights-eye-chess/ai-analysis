@@ -1,12 +1,12 @@
 {
   "name": "@knights-eye-chess/ai-analysis",
-  "version": "0.1.0-dev.2",
+  "version": "0.1.0-dev.3",
   "lockfileVersion": 3,
   "requires": true,
   "packages": {
     "": {
       "name": "@knights-eye-chess/ai-analysis",
-      "version": "0.1.0-dev.2",
+      "version": "0.1.0-dev.3",
       "dependencies": {
         "@ai-sdk/provider": "4.0.9",
         "@ai-sdk/provider-utils": "5.0.34",

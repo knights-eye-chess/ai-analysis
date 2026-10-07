@@ -173,6 +173,8 @@ export type ReasoningToolExecutionContext = {
   reserveSearch?: () => boolean;
   /** Reserve one answer-budgeted engine search before a PV endpoint continuation. */
   reserveAdditionalSearch?: () => boolean;
+  /** Actual completed analyzer outcome; failed dispatches still consume attempts. */
+  recordSearchOutcome?: (outcome: 'succeeded' | 'failed') => void;
 };
 
 export type ReasoningProbeRecipe = {

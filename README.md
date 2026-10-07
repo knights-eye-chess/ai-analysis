@@ -41,6 +41,16 @@ legacy budget accounting; check `reportedOutputTokens` and `metering` before
 reporting measured usage. Missing usage reserves the call allowance and has an
 explicit `outputBudgetReservation`; it is not measured usage or billing.
 
+Requirement KE-AI-PORT-002: `searchesUsed` retains attempted engine dispatch
+accounting, including failures. `searchesSucceeded` and `searchesFailed` report
+completed search outcomes separately. Preparation retains bounded error message,
+code and HTTP status, without stacks or headers. When every completed attempted
+search fails, `engineEvidenceStatus` is `unavailable` and the saved answer plainly
+discloses that engine analysis could not be completed. A successful later search
+clears that all-failed condition. Cancellation remains a failure, and answers
+that request no searches are not labelled engine outages. Hosts can mark such
+unavailable answers degraded while retaining the pipeline's `diagnostic` status.
+
 Build independently with `npm install` and `npm run build` in the unpacked
 package. `src` is generated from canonical repository modules for packaging,
 never a second editable implementation. `npm test` runs the deterministic
@@ -68,7 +78,7 @@ npm run pack:checked
 ```
 
 The source snapshot is recorded in `SOURCE-ORIGIN.json`. This private preview
-uses version `0.1.0-dev.2`; earlier `0.1.0-dev.1` artifacts remain immutable.
+uses version `0.1.0-dev.3`; earlier `0.1.0-dev.1` and `0.1.0-dev.2` artifacts remain immutable.
 Internal dependencies are pinned archives in `vendor/npm`. Update an existing
 dependency with `node scripts/update-dependency.mjs @knights-eye-chess/name
 /absolute/path/package.tgz`, then run `npm ci` and `npm run check`. Review the
