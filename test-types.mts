@@ -19,4 +19,5 @@ const analyzer:PositionAnalysisProvider={analyze:async()=>current};
 const oldAsCurrent:PositionAnalysisResult=old;
 // @ts-expect-error mate distance is numeric, never a UCI or SAN string
 const badMate:PositionAnalysisResult={...modern,lines:[{...modern.lines[0],mateInMoves:'3'}]};
+void runAnswerPipeline({connector,requestId:'parallel',question:'x',selected:selection,bridge:history,analyzer,preparationAnalyzer:analyzer,parallelPreparation:true,observationProvider:createProductionObservationProvider({context:selection.context}),prepareRouting:async()=>({question:'x',selectionKey:'x',deliveryId:'x',elapsedMs:0,omitSelectedContext:false,decision:{version:QUESTION_ROUTING_VERSION,status:'fallback',omitSelectedContext:false,includeGameRecord:false,reviewGame:false,reason:'explicit'}})});
 void analyzer;void oldAsCurrent;void badMate;

@@ -73,7 +73,7 @@ test('KE-AI-PORT-003: classification failure and cancellation retain their origi
 });
 test('KE-AI-PORT-003: initial-search refresh failure remains recoverable and supplied routing is not remeasured',async()=>{
  const events=[],input=setup(async()=>reply('The position permits development.'),{analyzer:analyzer([]),
-  bridge:{async refreshContext(){throw Error('refresh unavailable');}},observableTraceSink:event=>events.push(event)});
+  parallelPreparation:true,bridge:{async refreshContext(){throw Error('refresh unavailable');}},observableTraceSink:event=>events.push(event)});
  input.routingPreparation=await input.prepareRouting();input.prepareRouting=()=>{throw Error('supplied routing must be reused');};
  const result=await runAnswerPipeline(input);
  assert.equal(result.answer,'The position permits development.');
@@ -98,6 +98,98 @@ test('KE-AI-PORT-003: overlapping opening lookup measures only its remaining wai
  const phase=events.filter(event=>event.stage==='answer-pipeline-opening-wait');
  assert.equal(phase.length,2);assert.equal(phase[0].payload.elapsedMs,8);
  assert.equal(phase[1].payload.durationMs,33);assert.equal(phase[1].payload.elapsedMs,41);
+});
+function deferred() {let resolve,reject;const promise=new Promise((yes,no)=>{resolve=yes;reject=no;});return {promise,resolve,reject};}
+function tick() {return new Promise(resolve=>setImmediate(resolve));}
+function untilAborted(signal) {return new Promise((_,reject)=>{if(signal.aborted)reject(signal.reason);else signal.addEventListener('abort',()=>reject(signal.reason),{once:true});});}
+test('KE-AI-PORT-004: ordinary preparation and classification overlap only when requested and model waits for both',async()=>{
+ for(const first of ['preparation','classification']){
+  const prepGate=deferred(),classificationGate=deferred(),events=[],searches=[];let classificationStarted=false,turns=0;
+  const legal=analyzer(searches);
+  const input=moveSetup(async()=>{turns++;return reply('The pawn occupies the centre.');},{parallelPreparation:true,
+   analyzer:{async analyze(request){if(!searches.length)await prepGate.promise;return legal.analyze(request);}},
+   bridge:{async refreshContext(selected){classificationStarted=true;await classificationGate.promise;selected.existingAnalysis=null;return {existingAnalysis:null};}},
+   observableTraceSink:event=>events.push(event)});
+  const running=runAnswerPipeline(input);
+  await tick();
+  assert.equal(classificationStarted,true);assert.equal(turns,0);
+  for(const stage of ['answer-pipeline-preparation','answer-pipeline-classification-refresh'])assert.ok(events.some(event=>event.stage===stage&&event.direction==='input'));
+  (first==='preparation'?prepGate:classificationGate).resolve();await tick();assert.equal(turns,0);
+  (first==='preparation'?classificationGate:prepGate).resolve();const result=await running;
+  assert.equal(result.answer,'The pawn occupies the centre.');assert.equal(turns,1);assert.equal(searches.length,2);
+  const phases=events.filter(event=>event.stage==='answer-pipeline-preparation'||event.stage==='answer-pipeline-classification-refresh');
+  for(const start of phases.filter(event=>event.direction==='input')){
+   const end=phases.find(event=>event.payload.invocationId===start.payload.invocationId&&event.direction==='output');
+   assert.ok(end);assert.equal(end.payload.status,'completed');assert.ok(Number.isFinite(end.payload.durationMs));
+   assert.equal(start.model,'deterministic');assert.equal(start.providerRoute,'local-harness');
+  }
+ }
+});
+test('KE-AI-PORT-004: opted-in independent opponent probes overlap with classification and retain original evidence order',async()=>{
+ const beforeGate=deferred(),afterGate=deferred(),classificationGate=deferred(),requests=[],completed=[];let classificationStarted=false,turns=0;
+ const legal=analyzer([]);
+ const running=runAnswerPipeline(moveSetup(async()=>{turns++;return reply('The pawn occupies the centre.');},{parallelPreparation:true,
+  analyzer:{async analyze(request){requests.push(request);await (request.depth===18?beforeGate:afterGate).promise;completed.push(request.depth);return legal.analyze(request);}},
+  bridge:{async refreshContext(){classificationStarted=true;await classificationGate.promise;return {existingAnalysis:null};}},
+ }));
+ await tick();assert.deepEqual(requests.map(request=>request.depth),[18,20]);assert.equal(classificationStarted,true);assert.equal(turns,0);
+ afterGate.resolve();classificationGate.resolve();await tick();assert.deepEqual(completed,[20]);assert.equal(turns,0);
+ beforeGate.resolve();const result=await running;assert.equal(turns,1);assert.deepEqual(completed,[20,18]);
+ assert.deepEqual(result.preparation.rawRecords.map(record=>record.scope),['hypothetical-opponent-turn-before','actual-after']);
+ assert.deepEqual(result.preparation.rawRecords.map(record=>record.request.depth),[18,20]);
+ assert.deepEqual(result.preparation.investigationLeads.probes.map(probe=>probe.scope),['hypothetical-opponent-turn-before','actual-after']);
+ assert.equal(result.preparation.searchCount,2);assert.equal(result.preparation.searchesSucceeded,2);assert.equal(result.preparation.searchesFailed,0);
+});
+test('KE-AI-PORT-004: ordinary preparation retains serial host behavior by default',async()=>{
+ const gate=deferred(),searches=[];let refreshing=false,turns=0;
+ const legal=analyzer(searches);
+ const running=runAnswerPipeline(moveSetup(async()=>{turns++;return reply('The pawn occupies the centre.');},{
+  analyzer:{async analyze(request){if(!searches.length)await gate.promise;return legal.analyze(request);}},
+  bridge:{async refreshContext(){refreshing=true;assert.equal(searches.length,2);return {existingAnalysis:null};}},
+ }));
+ await tick();assert.equal(refreshing,false);assert.equal(turns,0);gate.resolve();await running;assert.equal(refreshing,true);assert.equal(turns,1);
+});
+test('KE-AI-PORT-004: failed parallel classification cancels and drains preparation while retaining the original failure',async()=>{
+ const failure=new Error('private-classification-failure'),events=[];let turns=0,observations=0,drained=false;
+ const input=moveSetup(async()=>{turns++;return reply('Must not run.');},{parallelPreparation:true,
+  analyzer:{async analyze(request){try{await untilAborted(request.signal);}finally{await tick();drained=true;}}},
+  bridge:{async refreshContext(){await tick();throw failure;}},
+  observationProvider:{async observe(){observations++;throw Error('Must not observe.');}},
+  observableTraceSink:event=>events.push(event)});
+ await assert.rejects(runAnswerPipeline(input),error=>error===failure);
+ assert.equal(drained,true);assert.equal(turns,0);assert.equal(observations,0);
+ assert.equal(events.find(event=>event.stage==='answer-pipeline-classification-refresh'&&event.direction==='error').payload.status,'failed');
+ assert.equal(events.find(event=>event.stage==='answer-pipeline-preparation'&&event.direction==='error').payload.status,'cancelled');
+ assert.doesNotMatch(JSON.stringify(events.filter(event=>event.stage.startsWith('answer-pipeline-'))),/private-classification-failure/);
+});
+test('KE-AI-PORT-004: parent cancellation during overlapping preparation prevents observations and model dispatch',async()=>{
+ const controller=new AbortController(),reason=new Error('explicit-parent-cancellation'),events=[];let turns=0,refreshes=0;
+ const running=runAnswerPipeline(moveSetup(async()=>{turns++;return reply('Must not run.');},{parallelPreparation:true,signal:controller.signal,
+  analyzer:{async analyze(request){await untilAborted(request.signal);}},
+  bridge:{async refreshContext(_selected,signal){refreshes++;await untilAborted(signal);}},
+  observableTraceSink:event=>events.push(event)}));
+ const failed=assert.rejects(running,error=>error===reason);
+ await tick();assert.equal(refreshes,1);controller.abort(reason);await failed;assert.equal(turns,0);
+ const errors=events.filter(event=>event.stage.startsWith('answer-pipeline-')&&event.direction==='error');
+ assert.equal(errors.length,2);assert.ok(errors.every(event=>event.payload.status==='cancelled'));
+ assert.equal(events.some(event=>event.stage==='answer-pipeline-observations'),false);
+});
+test('KE-AI-PORT-004: cancellation remains effective when overlapping host operations ignore the signal and return',async()=>{
+ const controller=new AbortController(),reason=new Error('cancelled'),gate=deferred(),searches=[];let turns=0;
+ const legal=analyzer(searches);
+ const running=runAnswerPipeline(moveSetup(async()=>{turns++;return reply('Must not run.');},{parallelPreparation:true,signal:controller.signal,
+  analyzer:legal,bridge:{async refreshContext(){await gate.promise;return {existingAnalysis:null};}},
+ }));
+ const failed=assert.rejects(running,error=>error===reason);await tick();controller.abort(reason);gate.resolve();await failed;assert.equal(turns,0);
+});
+test('KE-AI-PORT-004: preparation analyzer affects upfront opponent probes only while model tools retain the normal analyzer',async()=>{
+ const preparationSearches=[],toolSearches=[];let turn=0;
+ const result=await runAnswerPipeline(moveSetup(async()=>++turn===1?reply('',[{toolCallId:'compare',toolName:'compare_moves',input:{phase:'before',movesUci:['e2e4','d2d4']}}]):reply('Both central pawn moves are available.'),{
+  parallelPreparation:true,analyzer:analyzer(toolSearches),preparationAnalyzer:analyzer(preparationSearches),
+  bridge:{async refreshContext(){return {existingAnalysis:null};}},
+ }));
+ assert.equal(result.answer,'Both central pawn moves are available.');assert.deepEqual(preparationSearches.map(request=>request.depth),[18,20]);
+ assert.ok(toolSearches.length>0);assert.ok(toolSearches.every(request=>request.depth===18));
 });
 test('KE-AI-PORT-002: all failed preparation and tool searches retain causes and disclose degraded answers',async()=>{
  let turn=0,calls=0;const events=[];

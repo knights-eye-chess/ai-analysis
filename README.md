@@ -68,6 +68,21 @@ and cancellation behavior. Phase events never include host error messages,
 credentials or chess payloads. Model/tool intervals remain separately measured;
 do not sum overlapping source lookup and engine intervals.
 
+Requirement KE-AI-PORT-004: hosts can explicitly set `parallelPreparation: true`
+to overlap the two independent ordinary opponent probes and classification refresh
+after routing. The probes retain their original evidence order when they finish
+out of order. At most three upfront searches can overlap with this opt-in.
+The default remains serial, and prepared-board initial searches retain their existing
+refresh order. Both ordinary operations complete before observation collection or
+model invocation. On failure the sibling is cancelled and drained before the
+original failure is propagated; explicit cancellation prevents model dispatch.
+Hosts must provide analyzers that safely support the overlap. `preparationAnalyzer`
+can select a separate provider for ordinary opponent probes only; evidence tools
+and prepared-board initial searches still use `analyzer`. Classification remains
+owned by the history bridge. No search, freshness, score or classification semantics
+are relaxed, and engine outages continue to use the inherited degraded-answer path.
+Overlapping phase durations must not be summed as sequential wall time.
+
 Build independently with `npm install` and `npm run build` in the unpacked
 package. `src` is generated from canonical repository modules for packaging,
 never a second editable implementation. `npm test` runs the deterministic
@@ -95,8 +110,8 @@ npm run pack:checked
 ```
 
 The source snapshot is recorded in `SOURCE-ORIGIN.json`. This private preview
-uses version `0.1.0-dev.6`; earlier `0.1.0-dev.1`, `0.1.0-dev.2`,
-`0.1.0-dev.3`, `0.1.0-dev.4` and `0.1.0-dev.5` artifacts remain immutable.
+uses version `0.1.0-dev.8`; earlier `0.1.0-dev.1`, `0.1.0-dev.2`,
+`0.1.0-dev.3`, `0.1.0-dev.4`, `0.1.0-dev.5` and `0.1.0-dev.6` artifacts remain immutable.
 Internal dependencies are pinned archives in `vendor/npm`. Update an existing
 dependency with `node scripts/update-dependency.mjs @knights-eye-chess/name
 /absolute/path/package.tgz`, then run `npm ci` and `npm run check`. Review the

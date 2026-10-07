@@ -9,7 +9,7 @@ type LeadLine = { root: string; uci: string; san: string; depth: number; scoreCp
 
 /** Cheap engine acquisition only. These leads do not register evidence or UI witnesses. */
 export async function prepareOpponentThreats(context: ReasoningPositionContext, engine: PositionAnalysisProvider,
-  signal?: AbortSignal, onProgress?: (message: string) => void): Promise<SimpleEvidencePreparation | undefined> {
+  signal?: AbortSignal, onProgress?: (message: string) => void, options: { parallel?: boolean } = {}): Promise<SimpleEvidencePreparation | undefined> {
   if (context.kind === "position") return undefined;
   const started = performance.now();
   const rawRecords: { scope: Scope; fen: string; request: Omit<PositionAnalysisRequest, "signal">; result: PositionAnalysisResult }[] = [];
@@ -29,23 +29,26 @@ export async function prepareOpponentThreats(context: ReasoningPositionContext, 
     }
   } catch { unavailable.push({ scope: "hypothetical-opponent-turn-before", reason: "invalid-position" }); }
   targets.push({ scope: "actual-after", fen: context.fenAfter, depth: 20 });
-  for (const target of targets) {
-    signal?.throwIfAborted();
+  const probeController = options.parallel ? new AbortController() : undefined;
+  const workSignal = probeController ? (signal ? AbortSignal.any([signal, probeController.signal]) : probeController.signal) : signal;
+  const examine = async (target: typeof targets[number]) => {
+    const records: typeof rawRecords = [], targetProbes: typeof probes = [], issues: typeof unavailable = [];
+    workSignal?.throwIfAborted();
     let dispatched = false, completed = false;
     try {
       if (new Chess(target.fen).isGameOver()) {
-        unavailable.push({ scope: target.scope, reason: "terminal-position" });
-        continue;
+        issues.push({ scope: target.scope, reason: "terminal-position" });
+        return { records, targetProbes, issues };
       }
       const request = { fen: target.fen, rootMoves: [], depth: target.depth, multiPv: 3, minimumPvPlies: 10 };
       dispatched = true;
       searchCount = (searchCount + 1) as 1 | 2;
       onProgress?.(`Examining ${target.scope === "actual-after" ? "opponent responses" : "potential opponent plans"} · depth ${target.depth}`);
-      const result = await engine.analyze({ ...request, signal });
-      signal?.throwIfAborted();
+      const result = await engine.analyze({ ...request, signal: workSignal });
+      workSignal?.throwIfAborted();
       searchesSucceeded++;
       completed = true;
-      rawRecords.push({ scope: target.scope, fen: target.fen, request, result });
+      records.push({ scope: target.scope, fen: target.fen, request, result });
       const lines: LeadLine[] = [];
       for (const line of result.lines) {
         try {
@@ -54,9 +57,9 @@ export async function prepareOpponentThreats(context: ReasoningPositionContext, 
           if (!line.pv.length || line.pv[0] !== line.rootMove) throw Error("invalid-root");
           lines.push({ root: line.rootMove, uci: line.pv.join(" "), san: san.join(" "), depth: line.depth,
             scoreCp: line.scoreCp, matePly: line.matePly, shorterThanRequested: line.pv.length < 10 });
-        } catch { unavailable.push({ scope: target.scope, reason: "invalid-continuation-omitted" }); }
+        } catch { issues.push({ scope: target.scope, reason: "invalid-continuation-omitted" }); }
       }
-      probes.push({ scope: target.scope, fen: target.fen,
+      targetProbes.push({ scope: target.scope, fen: target.fen,
         requested: { depth: request.depth, multiPv: request.multiPv, minimumPvPlies: request.minimumPvPlies },
         engine: result.engine, engineBuild: result.engineBuild, provenance: result.cacheProvenance,
         sourceProvenance: result.sourceCacheProvenance, command: result.command,
@@ -64,10 +67,30 @@ export async function prepareOpponentThreats(context: ReasoningPositionContext, 
         units: "centipawns; positive favors perspective; matePly is signed mate-in-moves (legacy name)",
         coveredRoots: lines.map(line => line.root), lines });
     } catch (error) {
-      signal?.throwIfAborted();
+      workSignal?.throwIfAborted();
       if (dispatched && !completed) searchesFailed++;
-      unavailable.push({ scope: target.scope, reason: "probe-unavailable", ...engineSearchFailure(error) });
+      issues.push({ scope: target.scope, reason: "probe-unavailable", ...engineSearchFailure(error) });
     }
+    return { records, targetProbes, issues };
+  };
+  let acquired: Awaited<ReturnType<typeof examine>>[];
+  if (options.parallel) {
+    const work = targets.map(examine);
+    try { acquired = await Promise.all(work); }
+    catch (error) {
+      probeController!.abort(error);
+      await Promise.allSettled(work);
+      throw error;
+    }
+  } else {
+    acquired = [];
+    for (const target of targets) acquired.push(await examine(target));
+  }
+  // Completion order must not change the preparation evidence's target order.
+  for (const result of acquired) {
+    rawRecords.push(...result.records);
+    probes.push(...result.targetProbes);
+    unavailable.push(...result.issues);
   }
   return { version: SIMPLE_EVIDENCE_PREPARATION_VERSION, searchCount, searchesSucceeded, searchesFailed, elapsedMs: performance.now() - started,
     rawRecords, investigationLeads: { version: "opponent-threat-leads/2", fenBefore: context.fenBefore, fenAfter: context.fenAfter, probes, unavailable,

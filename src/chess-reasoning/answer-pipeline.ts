@@ -27,6 +27,10 @@ export async function runAnswerPipeline(input: {
   modelName?: string;
   providerRoute?: string;
   analyzer?: CompatiblePositionAnalysisProvider;
+  /** Optional analyzer for ordinary opponent preparation; later model tools still use analyzer. */
+  preparationAnalyzer?: CompatiblePositionAnalysisProvider;
+  /** Opt in only when the host can safely serve overlapping preparation and classification searches. */
+  parallelPreparation?: boolean;
   observationProvider: ObservationProvider;
   prepareRouting: () => Promise<AnswerRoutingPreparation>;
   openingSession?: AnswerOpeningSession;
@@ -108,13 +112,36 @@ export async function runAnswerPipeline(input: {
       })().finally(() => clearTimeout(sourceTimer));
     })() : undefined;
     const analyzer = input.analyzer ? toLegacyPositionAnalysisProvider(input.analyzer) : undefined;
+    const preparationAnalyzer = input.preparationAnalyzer ? toLegacyPositionAnalysisProvider(input.preparationAnalyzer) : analyzer;
     const baseSearchPlan = planInitialSearches({question:input.question,context:input.selected.context,mainLine:routing.mainLine,reviewGame:routing.decision.reviewGame,reviewSubject:routing.decision.reviewSubject,answerScope:routing.decision.answers?.answer_scope?.choice,classificationQuestion:classificationTargetAtSelection(routing.decision,input.question,input.selected.context).applies,omitSelectedContext,playerPerspective:input.playerPerspective});
-    const preparation = analyzer && !omitSelectedContext && !baseSearchPlan.requests.length
-      ? await timed("answer-pipeline-preparation", () => prepareOpponentThreats(input.selected.context, analyzer, input.signal, input.onProgress)) : undefined;
+    // Capture the selected chess context before refresh can replace host analysis.
+    // Classification refresh changes existingAnalysis, not the selected position.
+    const selectedContext = input.selected.context;
+    const prepare = preparationAnalyzer && !omitSelectedContext && !baseSearchPlan.requests.length
+      ? () => timed("answer-pipeline-preparation", () => prepareOpponentThreats(selectedContext, preparationAnalyzer, input.signal, input.onProgress, { parallel: input.parallelPreparation })) : undefined;
+    const refresh = () => timed("answer-pipeline-classification-refresh", () => input.bridge!.refreshContext!(input.selected, input.signal), { origin: "opponent-threat-preparation" });
+    let preparation: Awaited<ReturnType<typeof prepareOpponentThreats>>;
+    let refreshed: Awaited<ReturnType<NonNullable<AnswerHistoryPort["refreshContext"]>>> | undefined;
+    if (input.parallelPreparation && prepare && selectedContext.kind !== "position" && input.bridge?.refreshContext) {
+      input.onProgress?.("Refreshing move classification and candidate moves");
+      const preparationWork = prepare();
+      const classificationWork = refresh();
+      try {
+        [preparation, refreshed] = await Promise.all([preparationWork, classificationWork]);
+        input.signal?.throwIfAborted();
+      } catch (error) {
+        // Abort and drain the sibling before the host tears down answer resources.
+        // Promise.all observes both rejections; preserve the first operation's error.
+        controller.abort(error);
+        await Promise.allSettled([preparationWork, classificationWork]);
+        throw error;
+      }
+    } else {
+      preparation = prepare ? await prepare() : undefined;
+      input.onProgress?.("Refreshing move classification and candidate moves");
+      refreshed = preparation && input.bridge?.refreshContext ? await refresh() : undefined;
+    }
     const initialSearchPlan=withBranchPreparation(baseSearchPlan,input.selected.context,omitSelectedContext,DEFAULT_BRANCH_EXPANSION_MODE);
-    input.onProgress?.("Refreshing move classification and candidate moves");
-    const refreshed = preparation && input.bridge?.refreshContext
-      ? await timed("answer-pipeline-classification-refresh", () => input.bridge!.refreshContext!(input.selected, input.signal), { origin: "opponent-threat-preparation" }) : undefined;
     // Never reuse a pre-search snapshot when no refresh capability is available.
     const existingAnalysis = refreshed?.existingAnalysis ?? (preparation ? null : input.selected.existingAnalysis);
     input.onProgress?.("Collecting compact chess evidence");
