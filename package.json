@@ -1,6 +1,6 @@
 {
   "name": "@knights-eye-chess/ai-analysis",
-  "version": "0.1.0-dev.8",
+  "version": "0.1.0-dev.9",
   "private": true,
   "type": "module",
   "files": [
@@ -14,7 +14,12 @@
     "test",
     "vendor",
     "SOURCE-ORIGIN.json",
-    "scripts"
+    "scripts",
+    "LICENSE",
+    "NOTICE",
+    "LICENSING.md",
+    "THIRD_PARTY_NOTICES.md",
+    "licenses"
   ],
   "exports": {
     ".": {
@@ -48,5 +53,6 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/knights-eye-chess/ai-analysis.git"
-  }
+  },
+  "license": "AGPL-3.0-or-later"
 }

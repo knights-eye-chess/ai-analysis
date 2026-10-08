@@ -1,0 +1,23 @@
+{
+  "date": "2026-10-08",
+  "issue": "https://github.com/knights-eye-chess/knightseye-net/issues/17",
+  "checks": {
+    "package": "@knights-eye-chess/ai-analysis",
+    "version": "0.1.0-dev.9",
+    "codeLicense": "AGPL-3.0-or-later",
+    "unchangedRuntimeAndArtworkFiles": 189,
+    "archiveSha256": "54d0cec1cf2d3e891b7249e14867b4df0dc571cedc9bbcea33528694dde1214e",
+    "licenseAndNoticeFilesPresent": true
+  },
+  "previousArtifact": "knights-eye-chess-ai-analysis-0.1.0-dev.8.tgz",
+  "sourceCheck": "npm ci and npm run pack:checked; see issue summary for installed artifact qualification",
+  "publication": "not performed",
+  "installedConsumerTests": {
+    "name": "@knights-eye-chess/ai-analysis",
+    "version": "0.1.0-dev.9",
+    "files": 1,
+    "passed": 30,
+    "failed": 0
+  },
+  "consumerTestHarness": "Independent npm install of six exact archives with TypeScript 5.9.3, esbuild 0.28.0 and Playwright 1.62.1; no package symlinks."
+}

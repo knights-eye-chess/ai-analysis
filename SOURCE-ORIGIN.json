@@ -4,5 +4,10 @@
   "sourcePath": "packages/answer-pipeline",
   "version": "0.1.0-dev.8",
   "previousArtifactVersion": "0.1.0-dev.6",
-  "ownership": "No license or public release decision made"
+  "ownership": "Owner-approved first-party code license: AGPL-3.0-or-later; see LICENSING.md. Public release remains a separate decision.",
+  "licenseDecision": {
+    "date": "2026-10-08",
+    "code": "AGPL-3.0-or-later",
+    "artwork": "not included"
+  }
 }

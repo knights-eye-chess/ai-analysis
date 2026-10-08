@@ -1,5 +1,7 @@
 # Answer pipeline (private Phase 6 preview)
 
+First-party code: **AGPL-3.0-or-later**. See [LICENSING.md](LICENSING.md) for scope and third-party terms.
+
 Requirement KE-AI-PORT-001: preserve the existing preparation, evidence nomination,
 search batch limits, six model turn budget, reserved composition, exact occurrence
 history, reference validation and cancellation in one reusable loop. Model

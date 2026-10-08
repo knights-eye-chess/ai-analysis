@@ -1,0 +1,202 @@
+{
+  "generated": "2026-10-08",
+  "scope": "Installed production dependency graph; first-party component archives excluded.",
+  "limits": [
+    "Metadata and copied notices are upstream statements, not a grant of rights by Knight\u2019s Eye.",
+    "Optional platform dependencies vary. Build/dev dependencies are not in this production inventory.",
+    "Original files embedded in assets/vendor archives retain their own terms."
+  ],
+  "packages": [
+    {
+      "name": "@ai-sdk/gateway",
+      "version": "4.0.69",
+      "declaredLicense": "Apache-2.0",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/vercel/ai",
+        "directory": "packages/gateway"
+      },
+      "upstreamNoticeFiles": [
+        "licenses/third-party/ai-sdk--gateway-4.0.69/LICENSE"
+      ]
+    },
+    {
+      "name": "@ai-sdk/provider",
+      "version": "4.0.9",
+      "declaredLicense": "Apache-2.0",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/vercel/ai",
+        "directory": "packages/provider"
+      },
+      "upstreamNoticeFiles": [
+        "licenses/third-party/ai-sdk--provider-4.0.9/LICENSE"
+      ]
+    },
+    {
+      "name": "@ai-sdk/provider-utils",
+      "version": "5.0.34",
+      "declaredLicense": "Apache-2.0",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/vercel/ai",
+        "directory": "packages/provider-utils"
+      },
+      "upstreamNoticeFiles": [
+        "licenses/third-party/ai-sdk--provider-utils-5.0.34/APACHE-2.0.txt",
+        "licenses/third-party/ai-sdk--provider-utils-5.0.34/src/to-json-schema/zod3-to-json-schema/LICENSE"
+      ]
+    },
+    {
+      "name": "@standard-schema/spec",
+      "version": "1.1.0",
+      "declaredLicense": "MIT",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/standard-schema/standard-schema"
+      },
+      "upstreamNoticeFiles": [
+        "licenses/third-party/standard-schema--spec-1.1.0/LICENSE"
+      ]
+    },
+    {
+      "name": "@types/json-schema",
+      "version": "7.0.15",
+      "declaredLicense": "MIT",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+        "directory": "types/json-schema"
+      },
+      "upstreamNoticeFiles": [
+        "licenses/third-party/types--json-schema-7.0.15/LICENSE"
+      ]
+    },
+    {
+      "name": "@types/node",
+      "version": "22.19.19",
+      "declaredLicense": "MIT",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+        "directory": "types/node"
+      },
+      "upstreamNoticeFiles": [
+        "licenses/third-party/types--node-22.19.19/LICENSE"
+      ]
+    },
+    {
+      "name": "@vercel/oidc",
+      "version": "3.2.0",
+      "declaredLicense": "Apache-2.0",
+      "repository": {
+        "directory": "packages/oidc",
+        "type": "git",
+        "url": "git+https://github.com/vercel/vercel.git"
+      },
+      "upstreamNoticeFiles": [
+        "licenses/third-party/vercel--oidc-3.2.0/LICENSE"
+      ]
+    },
+    {
+      "name": "@workflow/serde",
+      "version": "4.1.0",
+      "declaredLicense": "Apache-2.0",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/vercel/workflow.git",
+        "directory": "packages/serde"
+      },
+      "upstreamNoticeFiles": [
+        "licenses/third-party/workflow--serde-4.1.0/APACHE-2.0.txt",
+        "licenses/third-party/workflow--serde-4.1.0/LICENSE.md"
+      ]
+    },
+    {
+      "name": "ai",
+      "version": "7.0.85",
+      "declaredLicense": "Apache-2.0",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/vercel/ai",
+        "directory": "packages/ai"
+      },
+      "upstreamNoticeFiles": [
+        "licenses/third-party/ai-7.0.85/LICENSE"
+      ]
+    },
+    {
+      "name": "chess.js",
+      "version": "1.4.0",
+      "declaredLicense": "BSD-2-Clause",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/jhlywa/chess.js"
+      },
+      "upstreamNoticeFiles": [
+        "licenses/third-party/chess.js-1.4.0/LICENSE"
+      ]
+    },
+    {
+      "name": "eventsource-parser",
+      "version": "3.1.1",
+      "declaredLicense": "MIT",
+      "repository": {
+        "type": "git",
+        "url": "git+ssh://git@github.com/rexxars/eventsource-parser.git"
+      },
+      "upstreamNoticeFiles": [
+        "licenses/third-party/eventsource-parser-3.1.1/LICENSE"
+      ]
+    },
+    {
+      "name": "json-schema",
+      "version": "0.4.0",
+      "declaredLicense": "(AFL-2.1 OR BSD-3-Clause)",
+      "repository": {
+        "type": "git",
+        "url": "http://github.com/kriszyp/json-schema"
+      },
+      "upstreamNoticeFiles": [
+        "licenses/third-party/json-schema-0.4.0/LICENSE"
+      ]
+    },
+    {
+      "name": "undici",
+      "version": "7.30.0",
+      "declaredLicense": "MIT",
+      "repository": {
+        "type": "git",
+        "url": "git+https://github.com/nodejs/undici.git"
+      },
+      "upstreamNoticeFiles": [
+        "licenses/third-party/undici-7.30.0/LICENSE",
+        "licenses/third-party/undici-7.30.0/lib/web/fetch/LICENSE"
+      ]
+    },
+    {
+      "name": "undici-types",
+      "version": "6.21.0",
+      "declaredLicense": "MIT",
+      "repository": {
+        "type": "git",
+        "url": "git+https://github.com/nodejs/undici.git"
+      },
+      "upstreamNoticeFiles": [
+        "licenses/third-party/undici-types-6.21.0/LICENSE"
+      ]
+    },
+    {
+      "name": "zod",
+      "version": "4.6.5",
+      "declaredLicense": "MIT",
+      "repository": {
+        "type": "git",
+        "url": "git+https://github.com/colinhacks/zod.git"
+      },
+      "upstreamNoticeFiles": [
+        "licenses/third-party/zod-4.6.5/LICENSE"
+      ]
+    }
+  ]
+}
