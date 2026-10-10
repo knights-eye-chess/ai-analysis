@@ -11,7 +11,7 @@
       "dependencies": {
         "@ai-sdk/provider": "4.0.9",
         "@ai-sdk/provider-utils": "5.0.34",
-        "@knights-eye-chess/move-classifier": "file:vendor/npm/knights-eye-chess-move-classifier-0.1.0-dev.8.tgz",
+        "@knights-eye-chess/move-classifier": "0.1.0-dev.10",
         "@types/json-schema": "7.0.15",
         "@types/node": "22.19.19",
         "ai": "7.0.85",
@@ -516,9 +516,9 @@
       }
     },
     "node_modules/@knights-eye-chess/move-classifier": {
-      "version": "0.1.0-dev.8",
-      "resolved": "file:vendor/npm/knights-eye-chess-move-classifier-0.1.0-dev.8.tgz",
-      "integrity": "sha512-4yOp6J4dFUcngO7R6reWecpe2iJzl3k0UBEk82zSN9T0QLo76k4zQqnnM0z1mjqrZg0uz0CQxCvpjPJGFEcQVg==",
+      "version": "0.1.0-dev.10",
+      "resolved": "https://registry.npmjs.org/@knights-eye-chess/move-classifier/-/move-classifier-0.1.0-dev.10.tgz",
+      "integrity": "sha512-JG2kMEw12IJohfXd2eQe/SsQuFVCO6DZgEfYcYeRMo3tTLMun5QJBVQHBmNMCmlj/Bm2edSIkiHT3t4znj2Bxw==",
       "license": "MIT",
       "engines": {
         "node": ">=24.0.0"

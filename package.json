@@ -52,7 +52,7 @@
   "dependencies": {
     "@ai-sdk/provider": "4.0.9",
     "@ai-sdk/provider-utils": "5.0.34",
-    "@knights-eye-chess/move-classifier": "file:vendor/npm/knights-eye-chess-move-classifier-0.1.0-dev.8.tgz",
+    "@knights-eye-chess/move-classifier": "0.1.0-dev.10",
     "@types/json-schema": "7.0.15",
     "@types/node": "22.19.19",
     "ai": "7.0.85",
