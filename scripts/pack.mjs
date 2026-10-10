@@ -1,7 +1,7 @@
 // Generated from knightseye-net/tools/release-tooling; edit the canonical template and sync.
 import { assertReleaseTooling } from './check-release-tooling.mjs';
 assertReleaseTooling();
-import { readFileSync, writeFileSync, mkdtempSync, mkdirSync, copyFileSync, existsSync, rmSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdtempSync, mkdirSync, copyFileSync, existsSync, rmSync, chmodSync, statSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 import os from 'node:os';
@@ -23,7 +23,9 @@ try {
     if (relative === 'npm-shrinkwrap.json' || relative === 'package-lock.json' || relative.startsWith('vendor/')) continue;
     const to = path.join(stage, relative);
     mkdirSync(path.dirname(to), { recursive: true });
-    copyFileSync(path.join(root, relative), to);
+    const source = path.join(root, relative);
+    copyFileSync(source, to);
+    chmodSync(to, statSync(source).mode & 0o111 ? 0o755 : 0o644);
   }
   const pkg = JSON.parse(readFileSync(path.join(stage, 'package.json'), 'utf8'));
   const dependencies = pkg.dependencies || {};
@@ -45,6 +47,13 @@ try {
   delete pkg.overrides;
   pkg.publishConfig = { registry: 'https://registry.npmjs.org/', access: 'public', tag: 'next' };
   writeFileSync(path.join(stage, 'package.json'), JSON.stringify(pkg, null, 2) + '\n');
+  chmodSync(path.join(stage, 'package.json'), 0o644);
+  const bins = typeof pkg.bin === 'string' ? [pkg.bin] : Object.values(pkg.bin || {});
+  for (const entry of bins) {
+    const target = path.resolve(stage, entry);
+    if (!target.startsWith(stage + path.sep)) throw Error(`Invalid binary target: ${entry}`);
+    chmodSync(target, 0o755);
+  }
   const packed = JSON.parse(run('npm', ['pack', '--ignore-scripts', '--json', '--pack-destination', output], stage))[0];
   const bytes = readFileSync(path.join(output, packed.filename));
   mkdirSync(destination, { recursive: true });

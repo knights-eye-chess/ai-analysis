@@ -11,7 +11,7 @@ npm ci
 npm run publish:prepare
 ```
 
-Review `artifacts/knights-eye-chess-ai-analysis-0.1.0-dev.13.tgz`, including its files, exports, declarations, licenses and exact registry dependencies. Reusable source and offline owner tests are intentional; application traces, credentials, vendor archives and source lockfiles are excluded. The checkout stays `private: true`; publish only the staged archive. Archive contents are immutable: use a new version for changed bytes.
+Review `artifacts/knights-eye-chess-ai-analysis-0.1.0-dev.14.tgz`, including its files, exports, declarations, licenses and exact registry dependencies. Reusable source and offline owner tests are intentional; application traces, credentials, vendor archives and source lockfiles are excluded. The checkout stays `private: true`; publish only the staged archive. Archive contents are immutable: use a new version for changed bytes.
 
 Before every coordinated release, run `node tools/release-tooling/sync.mjs --check` in the reviewed app checkout alongside all six component revisions. Record those commits and the result.
 
