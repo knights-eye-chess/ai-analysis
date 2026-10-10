@@ -26,16 +26,20 @@ try {
     copyFileSync(path.join(root, relative), to);
   }
   const pkg = JSON.parse(readFileSync(path.join(stage, 'package.json'), 'utf8'));
-  const localDependencies = Object.entries(pkg.dependencies || {}).filter(([, value]) => value.startsWith('file:'));
-  for (const [name, value] of localDependencies) {
-    const original = JSON.parse(run('tar', ['-xOf', path.resolve(root, value.slice(5)), 'package/package.json']));
-    if (original.name !== name) throw Error(`Dependency identity mismatch: ${name}`);
-    const version = release.registryDependencies[name];
-    if (!version || !/^\d+\.\d+\.\d+(?:-[\w.-]+)?$/.test(version)) throw Error(`Missing exact registry release version: ${name}`);
-    pkg.dependencies[name] = version;
+  const dependencies = pkg.dependencies || {};
+  const mapping = release.registryDependencies || {};
+  for (const [name, version] of Object.entries(mapping)) {
+    if (!/^\d+\.\d+\.\d+(?:-[\w.-]+)?$/.test(version)) throw Error(`Missing exact registry release version: ${name}`);
+    const value = dependencies[name];
+    if (!value) throw Error(`Unexpected registry release dependency: ${name}`);
+    if (value.startsWith('file:')) {
+      const original = JSON.parse(run('tar', ['-xOf', path.resolve(root, value.slice(5)), 'package/package.json']));
+      if (original.name !== name) throw Error(`Dependency identity mismatch: ${name}`);
+    } else if (value !== version) throw Error(`Registry dependency must match exact release version: ${name}`);
+    dependencies[name] = version;
   }
-  for (const name of Object.keys(release.registryDependencies)) {
-    if (!localDependencies.some(([dependency]) => dependency === name)) throw Error(`Unexpected registry release dependency: ${name}`);
+  for (const [name, value] of Object.entries(dependencies)) {
+    if (value.startsWith('file:') || (name.startsWith('@knights-eye-chess/') && !mapping[name])) throw Error(`Missing exact registry release version: ${name}`);
   }
   delete pkg.private;
   delete pkg.overrides;

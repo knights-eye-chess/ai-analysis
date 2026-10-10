@@ -1,10 +1,10 @@
 # Repository guidance
 
-This private repository owns `@knights-eye-chess/ai-analysis` source. Read [README.md](README.md) and [SOURCE-ORIGIN.json](SOURCE-ORIGIN.json) before changing code. The origin record preserves the historical extraction snapshot; maintained source and future changes belong in [this component repository](https://github.com/knights-eye-chess/ai-analysis).
+This repository owns `@knights-eye-chess/ai-analysis` source. Read [README.md](README.md) and [SOURCE-ORIGIN.json](SOURCE-ORIGIN.json) before changing code. The origin record preserves the historical extraction snapshot; maintained source and future changes belong in [this component repository](https://github.com/knights-eye-chess/ai-analysis).
 
-Use Node 24+, npm ci, npm run check and npm run pack:checked. Internal source-build dependencies use hash-pinned local archives and the lockfile; the pack helper emits exact version dependencies. Never overwrite committed archives with different bytes at the same filename/version. Bump the version for a new artifact.
+Use Node 24+, npm ci, npm run check and npm run pack:checked. Source builds use exact registry dependencies and the lockfile after coordinated bootstrap. Historical archives stay immutable; the pack helper also accepts legacy archived inputs. Never overwrite committed archives with different bytes at the same filename/version. Bump the version for a new artifact.
 
-Keep this repository private. Licensing is approved as recorded below. Public publishing, support commitments and automatic CI require a separate owner decision. The manual workflow does not deploy websites. Do not alter classifier semantics or host UI behavior as part of a structural cleanup.
+The owner authorized public visibility and manual npm prerelease publication on 2026-10-10. Preserve approved licensing. Support commitments and automatic publication require a separate decision. The manual workflow does not deploy websites. Do not alter classifier semantics or host UI behavior as part of a structural cleanup.
 
 ## Approved licensing decision (2026-10-08)
 
