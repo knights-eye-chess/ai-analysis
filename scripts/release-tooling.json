@@ -3,7 +3,7 @@
   "canonical": "knightseye-net/tools/release-tooling",
   "sha256": {
     "scripts/pack.mjs": "334aa4041e59b14fd2b072969f50beea64449136f7f9146d63d7277fc2e4808a",
-    "scripts/publish-reviewed.mjs": "e9e8a6f5eeff37d5050b96e75fda2fa33084b1f9bc5d5a6688b0aef737dd51c5",
+    "scripts/publish-reviewed.mjs": "b91c7aa578bc34c490b42006038de4ee8b9c596a592aa079bacd836d02feb647",
     ".github/workflows/npm-publish.yml": "b25cec136db205d69a407284dae2bb66f3d56be13ed2a1367f0db167a232050d",
     "scripts/verify-release.mjs": "d0f9baead779e553385bb7c26f1238ad4e60a189a818d4db4f721a1e5f88dedc",
     "scripts/update-dependency.mjs": "9919f172be33973f124eabf56c1dc70e41e941e601783ef01aba1c47dd70db9d",

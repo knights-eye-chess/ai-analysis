@@ -22,19 +22,17 @@ engine hosting, persistence and privacy settings for chess data and traces.
 
 ## Get started
 
-Use Node 24 or newer. This preview has not been published to npm. From a checkout
-of [this repository](https://github.com/knights-eye-chess/ai-analysis):
+Use Node 24 or newer. Install the published prerelease with the chess library
+imported by the example below:
 
 ```sh
-npm ci
-npm run pack:checked
+npm install @knights-eye-chess/ai-analysis@next chess.js@1.4.0
 ```
 
-Install the resulting archive in your app:
-
-```sh
-npm install /absolute/path/to/ai-analysis/artifacts/knights-eye-chess-ai-analysis-0.1.0-dev.12.tgz
-```
+The first reviewed registry candidate is `0.1.0-dev.14`; pin the exact version
+for a reproducible install. Source developers can use `npm ci` and
+`npm run pack:checked` in this checkout.
+[SOURCE-ORIGIN.json](SOURCE-ORIGIN.json) records historical archive provenance.
 
 This runnable example uses a local connector with a fixed answer. It needs no
 provider credentials or engine, and demonstrates host wiring rather than model
