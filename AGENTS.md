@@ -1,6 +1,6 @@
 # Repository guidance
 
-This private repository owns `@knights-eye-chess/ai-analysis` source. Read README.md and SOURCE-ORIGIN.json before changing code. The source originated in the preserved Shedal/KnightsEye backup; future changes belong here.
+This private repository owns `@knights-eye-chess/ai-analysis` source. Read [README.md](README.md) and [SOURCE-ORIGIN.json](SOURCE-ORIGIN.json) before changing code. The origin record preserves the historical extraction snapshot; maintained source and future changes belong in [this component repository](https://github.com/knights-eye-chess/ai-analysis).
 
 Use Node 24+, npm ci, npm run check and npm run pack:checked. Internal source-build dependencies use hash-pinned local archives and the lockfile; the pack helper emits exact version dependencies. Never overwrite committed archives with different bytes at the same filename/version. Bump the version for a new artifact.
 

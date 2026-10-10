@@ -9,5 +9,8 @@
     "date": "2026-10-08",
     "code": "AGPL-3.0-or-later",
     "artwork": "not included"
-  }
+  },
+  "currentRepository": "knights-eye-chess/ai-analysis",
+  "currentSourceUrl": "https://github.com/knights-eye-chess/ai-analysis",
+  "originNote": "sourceRepository, sourceCommit and sourcePath identify the historical extraction snapshot. The archived private origin is not a current source or documentation link; use currentSourceUrl for maintained source and this repository for build instructions."
 }
