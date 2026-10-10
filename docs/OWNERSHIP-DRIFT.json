@@ -1,0 +1,55 @@
+{
+  "date": "2026-10-10",
+  "installedVersion": "0.1.0-dev.9",
+  "sourceVersionBefore": "0.1.0-dev.11",
+  "drift": [
+    {
+      "module": "answer-pipeline.ts",
+      "aiSource": "622c461e788a621aaf616d5e9cfef38f640a16287da8f936a14ac7bce18dbf39",
+      "appRetained": "e58cf5a5f9429dff833dff00ba3cab3177b89268bae6a5905dfeb3a806243958",
+      "installedDev9": "622c461e788a621aaf616d5e9cfef38f640a16287da8f936a14ac7bce18dbf39"
+    },
+    {
+      "module": "opponent-threat-preparation.ts",
+      "aiSource": "45045ee72d072084172c3051a98abef7f675e2fe82e90c19fc3458b69e89683f",
+      "appRetained": "2687ef82b06efa51e605b2fd0829b4ea36b13815740f09f67f93f2f874d8dbd8",
+      "installedDev9": "45045ee72d072084172c3051a98abef7f675e2fe82e90c19fc3458b69e89683f"
+    },
+    {
+      "module": "poc-contracts.ts",
+      "aiSource": "42b90f1a26362c4183a606c97df9fcc3218742e8dc2807bef1df421debe0e05a",
+      "appRetained": "bd9e048e158e000b2c8b542ba9174ae03d5e38b78ea33f7bc74d058557eee7a7",
+      "installedDev9": "42b90f1a26362c4183a606c97df9fcc3218742e8dc2807bef1df421debe0e05a"
+    },
+    {
+      "module": "poc-tools.ts",
+      "aiSource": "3e825a9f014dae1878faa052909b0ade2be75d0bf9090337c96cae9ddb0403ef",
+      "appRetained": "f0306a7848b7925415dc96e02c825335abcaea51af549b0c1ecc920cbb1d8735",
+      "installedDev9": "3e825a9f014dae1878faa052909b0ade2be75d0bf9090337c96cae9ddb0403ef"
+    },
+    {
+      "module": "portable-answer-runtime.ts",
+      "aiSource": "2d030313e625943ea5a9aa9f417c5cde9d92c5df87864d98ff0fb40e6d8c0e95",
+      "appRetained": "054b9336ef1a5b10c7a72691dca0a1a37407ded66e291165150473a374c21014",
+      "installedDev9": "2d030313e625943ea5a9aa9f417c5cde9d92c5df87864d98ff0fb40e6d8c0e95"
+    },
+    {
+      "module": "server-simple-policy.ts",
+      "aiSource": "14c299aac265d7d1e24fad56c67b0a0b6ce6056d9ab332601012b299595abadc",
+      "appRetained": "13f395f08c08d8e01508f556d0443c1b24b0dff15ca75774aa7d50488645e96d",
+      "installedDev9": "14c299aac265d7d1e24fad56c67b0a0b6ce6056d9ab332601012b299595abadc"
+    },
+    {
+      "module": "simple-evidence-preparation.ts",
+      "aiSource": "5b47eca1f6846caf441175b0f99cd7bbda71b0cfdb5631e934cc31d8c9dbdd52",
+      "appRetained": "bda062895d205d071dd9b00dfdbcd1024eec68507442d7ac1376fdc229f3eca1",
+      "installedDev9": "5b47eca1f6846caf441175b0f99cd7bbda71b0cfdb5631e934cc31d8c9dbdd52"
+    },
+    {
+      "module": "simple-prose-references.ts",
+      "aiSource": "249865423d3475856093ac5979f8ab81774becdad38594944302da8f62c9a151",
+      "appRetained": "bf50bf70f5941fbfd2956a87d78ec34f01ae5e00fc2ecd91c073a91304637c2a",
+      "installedDev9": "249865423d3475856093ac5979f8ab81774becdad38594944302da8f62c9a151"
+    }
+  ]
+}

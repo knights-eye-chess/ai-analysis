@@ -1,4 +1,4 @@
-import { scopedClassifierDecision } from '../classifier-decision';
+import { scopedClassifierDecision } from '@knights-eye-chess/move-classifier/contracts';
 import { savedScorePresentation } from './saved-score-presentation';
 import { Chess } from 'chess.js';
 import { reasoningContextHash, REASONING_POC_VERSION, validateReasoningPositionContext, type ReasoningPositionContext, type ReasoningEvidenceRecord } from './poc-contracts';

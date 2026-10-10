@@ -1,0 +1,11 @@
+{
+  "schema": 1,
+  "canonical": "knightseye-net/tools/release-tooling",
+  "sha256": {
+    "scripts/pack.mjs": "d57bfa0f0d8d3e422422843563bb006c8b78f251660392ab0976e48ed70ff653",
+    "scripts/verify-release.mjs": "d0f9baead779e553385bb7c26f1238ad4e60a189a818d4db4f721a1e5f88dedc",
+    "scripts/update-dependency.mjs": "22cb26f1efe6320398420c9afebdc15537188276aab938d3ebfa63d3266374a5",
+    "scripts/check-release-tooling.mjs": "8b93431e44b9bafb631c6867c776f0764416ca5c65160ff95d976d961f6b5cb8",
+    ".github/workflows/quality.yml": "a014920a9f89dc494a020bee5f69aec779cf58825f491690f9ed1ec089ed6fa0"
+  }
+}

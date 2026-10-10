@@ -10,15 +10,22 @@ import { applyIdentityMove } from "./piece-identities";
 import { reasoningEvidenceReplayStartPhase } from "./poc-move-witnesses";
 import { reasoningContextHash, validateReasoningPositionContext, type ReasoningPositionContext, type ReasoningEvidenceRecord } from "./poc-contracts";
 import { effectiveLicensesForRecord } from "./evidence-licenses";
+import { admitFreshEnginePvWitnesses, type FreshEnginePvWitness, type FreshEnginePvReferenceEvidence } from './fresh-engine-pv-witnesses';
+export type { FreshEnginePvWitness } from './fresh-engine-pv-witnesses';
+export type SimpleProseReferenceOptions = { freshEnginePvWitnesses?: readonly FreshEnginePvWitness[] };
+export type SimpleReferenceGapCounts = {
+  version: 'simple-reference-gap-counts/1'; unboundProseSpans: number; unboundMentions: number;
+  unresolvedReferences: number; unknownCitations: number; formattingWarnings: number;
+};
 
-export const SIMPLE_REFERENCE_VERSION = "simple-references/21";
+export const SIMPLE_REFERENCE_VERSION = "simple-references/22";
 const MAX_EVIDENCE_REPLAY_PLIES = 256;
 const INTERNAL_WITNESS = Symbol('internal-evidence-witness');
 const MAX_AUTHORED_REFERENCE_PLIES = MAX_INTERACTIVE_LINE_PLIES;
 type Phase = "before" | "after";
 export type SimplePosition = { recordedContext?: ReasoningPositionContext; start: Phase; moves: { uci: string; san: string; pieceId: string }[]; fen: string };
 export type SimpleReference = { kind: "move" | "piece" | "square" | "sequence"; label: string; displayLabel?: string; position: SimplePosition;
-  evidenceIds: string[]; square?: string; pieceId?: string; san?: string; uci?: string; copyText?: string; pieceCode?: string };
+  evidenceIds: string[]; engineEvidence?: FreshEnginePvReferenceEvidence[]; square?: string; pieceId?: string; san?: string; uci?: string; copyText?: string; pieceCode?: string };
 export type SimpleToken = { text: string; reference?: SimpleReference; sourceLink?: { href: string }; gap?: string; variationIndex?: number; variationStart?: boolean; variationEnd?: boolean; variationPlayFrom?: number; variationMoveIndices?: number[] };
 const UCI = /^[a-h][1-8][a-h][1-8][qrbn]?$/;
 const names = { p: "pawn", n: "knight", b: "bishop", r: "rook", q: "queen", k: "king" };
@@ -89,7 +96,7 @@ export function repairFrozenCitationLabels(value: string, rawParagraph: string) 
 }
 
 /** Presentation admission only: no claim-entailment or strategic validator. */
-export function simpleProseReferences(answer: string, context: ReasoningPositionContext, records: readonly ReasoningEvidenceRecord[], recordedLine?: RecordedReferenceLine, recordedPath?: string[], onReference?: (reference:AuthoredReferenceResult) => void, internalWitness?: typeof INTERNAL_WITNESS) {
+export function simpleProseReferences(answer: string, context: ReasoningPositionContext, records: readonly ReasoningEvidenceRecord[], recordedLine?: RecordedReferenceLine, recordedPath?: string[], onReference?: (reference:AuthoredReferenceResult) => void, internalWitness?: typeof INTERNAL_WITNESS | SimpleProseReferenceOptions) {
   const authoredPathLimit = internalWitness === INTERNAL_WITNESS ? MAX_EVIDENCE_REPLAY_PLIES : MAX_AUTHORED_REFERENCE_PLIES;
   validateReasoningPositionContext(context);
   answer = normalizedEvidenceCitations(answer, records.filter(record => record.contextHash === reasoningContextHash(context))).answer;
@@ -124,7 +131,8 @@ export function simpleProseReferences(answer: string, context: ReasoningPosition
     replayCache.set(key, result);
     return result;
   };
-  const lines: { start: Phase; ucis: string[]; evidenceIds: string[]; authority: string }[] = [];
+  const freshEnginePvAdmission = admitFreshEnginePvWitnesses(context, typeof internalWitness === 'object' ? internalWitness.freshEnginePvWitnesses ?? [] : []);
+  const lines: { start: Phase; ucis: string[]; evidenceIds: string[]; authority: string; engineEvidence?: FreshEnginePvReferenceEvidence[] }[] = freshEnginePvAdmission.lines;
   if (recordedPath?.length) {
     try { replay('after',recordedPath); lines.push({start:'after',ucis:recordedPath,evidenceIds:[],authority:'Recorded game play'}); } catch { /* Invalid record path is not admitted. */ }
   }
@@ -239,24 +247,26 @@ export function simpleProseReferences(answer: string, context: ReasoningPosition
     const result = replay(start, ucis), matching = matchingLines(start, ucis);
     if (ucis.length > 1 && !matching.length) throw Error("Path not witnessed in acquired evidence");
     const evidenceIds = [...new Set(matching.flatMap(line => line.evidenceIds))];
+    const witnessedEngineEvidence = matching.flatMap(line => line.engineEvidence ?? []);
+    const engineEvidence = witnessedEngineEvidence.length ? { engineEvidence: witnessedEngineEvidence } : {};
     if (kind === "move") {
       const last = result.position.moves.at(-1);
       const authored = label.replace(/^(?:\d+)?(?:\.{1,3}|…)\s*/, "").replace(/[!?]+$/, "");
       if (!last || !compatibleMoveSan(authored, last.san)) throw Error("Move label does not match legal SAN");
       const mover = result.state.pieces[last.pieceId];
-      return { kind, label: last.san, ...last, position: result.position, copyText: result.copyText, evidenceIds, pieceCode: mover.color + mover.type };
+      return { kind, label: last.san, ...last, position: result.position, copyText: result.copyText, evidenceIds, ...engineEvidence, pieceCode: mover.color + mover.type };
     }
     if (!square || !/^[a-h][1-8]$/.test(square)) throw Error("Invalid square");
     if (kind === "square") {
       if (/^[a-h][1-8]$/.test(label) && label !== square) throw Error("Square label mismatch");
-      return { kind, label: square, displayLabel: label, square, position: result.position, evidenceIds };
+      return { kind, label: square, displayLabel: label, square, position: result.position, evidenceIds, ...engineEvidence };
     }
     const pieceId = result.state.squares[square as Square], piece = pieceId && result.state.pieces[pieceId];
     if (!piece) throw Error("No piece at the scoped square");
     // Labels are arbitrary localized prose. Only the replayed board supplies
     // identity and the accessible name; visible wording remains model-authored.
     const canonicalLabel = `${piece.color === "w" ? "White" : "Black"} ${names[piece.type]} on ${square}`;
-    return { kind: "piece", label: canonicalLabel, displayLabel: label, square, pieceId: piece.id, pieceCode: piece.color + piece.type, position: result.position, evidenceIds };
+    return { kind: "piece", label: canonicalLabel, displayLabel: label, square, pieceId: piece.id, pieceCode: piece.color + piece.type, position: result.position, evidenceIds, ...engineEvidence };
   };
   // A labelled move link can show the terminal move or a contiguous SAN suffix.
   // Preserve valid SAN labels; prose labels remain one witnessed playback link.
@@ -288,16 +298,25 @@ export function simpleProseReferences(answer: string, context: ReasoningPosition
       if (!matchingLines(phase, ucis).length) throw Error("Path not witnessed in acquired evidence");
       const terminal = result.position.moves.at(-1)!;
       const validated = resolve(terminal.san, target);
-      return [{ kind: 'sequence', label, position: validated.position, evidenceIds: validated.evidenceIds }];
+      return [{ kind: 'sequence', label, position: validated.position, evidenceIds: validated.evidenceIds,
+        ...(validated.engineEvidence ? { engineEvidence: validated.engineEvidence } : {}) }];
     }
   };
   const gaps: string[] = [], usedLines = new Map<string, typeof lines[number]>();
+  const referenceGapCounts: SimpleReferenceGapCounts = { version: 'simple-reference-gap-counts/1',
+    unboundProseSpans: 0, unboundMentions: 0, unresolvedReferences: 0, unknownCitations: 0, formattingWarnings: 0 };
   let resolved = 0, total = 0;
   const blocks = answer.split(/\n\s*\n|\n(?=\s*(?:[-*]|\d+\.)\s)/).filter(Boolean).map(raw => {
     const cited = [...raw.matchAll(/(?:evidence|recorded-main-line):[\w:-]+/g)].map(match => match[0]);
-    for (const id of cited) if (!evidence.some(record => record.id === id)) gaps.push(`Unknown citation: ${id}`);
+    for (const id of cited) if (!evidence.some(record => record.id === id)) {
+      referenceGapCounts.unknownCitations++;
+      gaps.push(`Unknown citation: ${id}`);
+    }
     const withoutCitationControls = raw.replace(/\uE200cite[^\uE201]*\uE201/g, "");
-    if (withoutCitationControls !== raw) gaps.push("Provider citation formatting hidden; raw output remains in the trace.");
+    if (withoutCitationControls !== raw) {
+      referenceGapCounts.formattingWarnings++;
+      gaps.push("Provider citation formatting hidden; raw output remains in the trace.");
+    }
     const text = historical.annotate(stripSimpleCitationLinks(withoutCitationControls).replace(/\[(?:\s*(?:evidence|recorded-main-line):[\w:-]+\s*[,;]?\s*)+\]/g, "").replace(/(?:evidence|recorded-main-line):[\w:-]+/g, "").replace(/\([\s,;]*\)/g, "").trim());
     const tokens: SimpleToken[] = [];
     const plain = (value: string) => {
@@ -305,7 +324,11 @@ export function simpleProseReferences(answer: string, context: ReasoningPosition
       // Count unbound concrete chess mentions without guessing their context.
       const unbound = value.match(/\b(?:[KQRBN](?:[a-h1-8])?x?[a-h][1-8]|[a-h]x[a-h][1-8](?:=[QRBN])?|[a-h][1-8](?:=[QRBN])?|O-O(?:-O)?)[+#]?\b|\b(?:the|White(?:’s|'s)?|Black(?:’s|'s)?) (?:knight|bishop|rook|queen|king|pawn)\b/g) || [];
       total += unbound.length;
-      if (unbound.length) gaps.push(`Unbound text: ${unbound.join(", ")}`);
+      if (unbound.length) {
+        referenceGapCounts.unboundProseSpans++;
+        referenceGapCounts.unboundMentions += unbound.length;
+        gaps.push(`Unbound text: ${unbound.join(", ")}`);
+      }
       tokens.push({ text: value });
     };
     let end = 0;
@@ -388,11 +411,16 @@ export function simpleProseReferences(answer: string, context: ReasoningPosition
               const key = `${ref.position.start}:${ucis.join(",")}`, previous = usedLines.get(key);
               usedLines.set(key, { ...line, start: ref.position.start, ucis,
                 evidenceIds: [...new Set([...(previous?.evidenceIds ?? []), ...line.evidenceIds])],
+                ...((previous?.engineEvidence?.length || line.engineEvidence?.length) ? {
+                  engineEvidence: [...(previous?.engineEvidence ?? []), ...(line.engineEvidence ?? [])].filter((item, index, all) =>
+                    all.findIndex(other => other.evidenceId === item.evidenceId && other.rootMove === item.rootMove) === index),
+                } : {}),
                 authority: previous?.authority === "Bounded engine line" ? previous.authority : line.authority });
             }
           }
         }
       } catch (error) {
+        referenceGapCounts.unresolvedReferences++;
         const gap = `${match[1]}: ${error instanceof Error ? error.message : "Unresolved reference"}`;
         onReference?.({label:match[1],target:match[2],resolved:false,reason:gap});
         gaps.push(gap); tokens.push({ text: match[1], gap });
@@ -410,7 +438,9 @@ export function simpleProseReferences(answer: string, context: ReasoningPosition
     token.variationIndex = visibleIndices.indexOf(token.variationIndex);
   for (const block of blocks) if (block.leadingVariationIndex !== undefined)
     block.leadingVariationIndex = visibleIndices.indexOf(block.leadingVariationIndex);
-  return { blocks, evidence, gaps, notationCorrections, coverage: { resolved, total }, variations: visibleIndices.map(index => variations[index]).map(line => ({
+  return { blocks, evidence, gaps, notationCorrections, coverage: { resolved, total },
+    ...(typeof internalWitness === 'object' ? { freshEnginePvAdmission: freshEnginePvAdmission.audit, referenceGapCounts } : {}),
+    variations: visibleIndices.map(index => variations[index]).map(line => ({
     ...line, position: line.recordedContext ? historicalRefs.get(`${reasoningContextHash(line.recordedContext)}:${line.ucis.join(',')}`)!.at(-1)!.position : replay(line.start, line.ucis).position,
     references: line.recordedContext ? historicalRefs.get(`${reasoningContextHash(line.recordedContext)}:${line.ucis.join(',')}`)! : replay(line.start, line.ucis).position.moves.map((move, index) =>
       resolve(move.san, `move:${line.start}:${line.ucis.slice(0, index + 1).join(",")}`)),

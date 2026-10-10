@@ -33,7 +33,7 @@ npm run pack:checked
 Install the resulting archive in your app:
 
 ```sh
-npm install /absolute/path/to/ai-analysis/artifacts/knights-eye-chess-ai-analysis-0.1.0-dev.11.tgz
+npm install /absolute/path/to/ai-analysis/artifacts/knights-eye-chess-ai-analysis-0.1.0-dev.12.tgz
 ```
 
 This runnable example uses a local connector with a fixed answer. It needs no
@@ -106,8 +106,13 @@ searches. The default is serial.
 
 ## Documentation and APIs
 
-The package has one root entry point, `@knights-eye-chess/ai-analysis`, with runtime
-exports and TypeScript declarations. Start with:
+The supported host API is the root entry point, `@knights-eye-chess/ai-analysis`, with runtime
+exports and TypeScript declarations. The separate [research entry](docs/RESEARCH-API.md)
+serves existing experimental evidence/replay tooling. Pure host protocol and
+presentation helpers use `@knights-eye-chess/ai-analysis/shared`; its runtime
+imports only chess.js and excludes model SDKs and the answer loop. Execution
+hosts use the root API.
+See the [ownership adoption record](docs/OWNERSHIP-ADOPTION.md) for preserved behavior. Start with:
 
 - [Pipeline inputs](src/chess-reasoning/answer-pipeline.ts): selection, routing, analysis and host ports.
 - [Connector contract](src/chess-reasoning/answer-model-connector.ts): turns, tool calls and capabilities.

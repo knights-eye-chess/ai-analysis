@@ -1,14 +1,19 @@
+// Generated from knightseye-net/tools/release-tooling; edit the canonical template and sync.
+import { assertReleaseTooling } from './check-release-tooling.mjs';
+assertReleaseTooling();
 import {readFileSync,writeFileSync,mkdirSync,existsSync,copyFileSync} from 'node:fs';
 import {createHash} from 'node:crypto';
 import {spawnSync} from 'node:child_process';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+process.chdir(fileURLToPath(new URL('../', import.meta.url)));
 const [name,input]=process.argv.slice(2);
 if(!name?.startsWith('@knights-eye-chess/')||!input)throw Error('Usage: node scripts/update-dependency.mjs @knights-eye-chess/name /absolute/package.tgz');
 const archive=path.resolve(input);
 const probe=spawnSync('tar',['-xOf',archive,'package/package.json'],{encoding:'utf8'});
 if(probe.status!==0)throw Error(probe.stderr);
 const metadata=JSON.parse(probe.stdout);
-if(metadata.name!==name||metadata.private!==true)throw Error('Expected matching private package');
+if(!/^\d+\.\d+\.\d+(?:-[\w.-]+)?$/.test(metadata.version||'')||metadata.name!==name||(metadata.private!==true && !(metadata.publishConfig?.registry==='https://registry.npmjs.org/' && metadata.publishConfig?.access==='public' && metadata.publishConfig?.tag==='next')))throw Error('Expected matching private preview or registry candidate');
 const file=path.basename(archive),destination='vendor/npm/'+file;
 const bytes=readFileSync(archive),sha256=createHash('sha256').update(bytes).digest('hex');
 mkdirSync('vendor/npm',{recursive:true});

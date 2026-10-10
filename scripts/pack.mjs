@@ -1,3 +1,6 @@
+// Generated from knightseye-net/tools/release-tooling; edit the canonical template and sync.
+import { assertReleaseTooling } from './check-release-tooling.mjs';
+assertReleaseTooling();
 import { readFileSync, writeFileSync, mkdtempSync, mkdirSync, copyFileSync, existsSync, rmSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import path from 'node:path';
