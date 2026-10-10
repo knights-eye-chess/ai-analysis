@@ -2,10 +2,10 @@
   "schema": "knights-eye-npm-preparation/1",
   "candidate": {
     "name": "@knights-eye-chess/ai-analysis",
-    "version": "0.1.0-dev.10",
-    "archive": "artifacts/knights-eye-chess-ai-analysis-0.1.0-dev.10.tgz",
-    "bytes": 543553,
-    "sha256": "414643a5e958f3f0ed95a8c26e7f6faca298a6ef2f1800de7ef6563e93350db4",
+    "version": "0.1.0-dev.11",
+    "archive": "artifacts/knights-eye-chess-ai-analysis-0.1.0-dev.11.tgz",
+    "bytes": 543563,
+    "sha256": "a30779412759408a3aafa1fc3753a9933884a1742ca8f17fa5b1931dcaa06833",
     "dependencies": {
       "ai": "7.0.85",
       "@ai-sdk/provider": "4.0.9",
@@ -18,20 +18,65 @@
     "privateTarball": false
   },
   "checks": {
-    "sourceAndInstalledTests": 129,
+    "metadataOnlyChangesVerified": true,
+    "nonmetadataArchiveEntriesByteIdentical": true,
+    "npmPublishDryRun": true,
+    "sourceAndInstalledTests": "not run for this candidate",
     "publicEsmImports": 19,
     "cliHelpCommands": 2,
     "strictNodeNextTypes": true,
-    "browserConsumer": "Chromium: board mount, tree PGN import, supplied-evidence classifier",
-    "npmPublishDryRun": true,
+    "browserConsumer": "not run for this candidate",
     "combinedSixArchiveInstall": true,
-    "historicalArchivesUnchanged": 62,
-    "immutableCollisionRejected": true
+    "historicalArchivesUnchanged": 54
   },
   "registryPublicationPerformed": false,
   "visibilityChanged": false,
   "limitations": [
     "No live model quality or engine performance claim",
     "Owner npm account/scope authority and publication authorization required"
-  ]
+  ],
+  "priorCandidateEvidence": {
+    "candidate": {
+      "name": "@knights-eye-chess/ai-analysis",
+      "version": "0.1.0-dev.10",
+      "archive": "artifacts/knights-eye-chess-ai-analysis-0.1.0-dev.10.tgz",
+      "bytes": 543553,
+      "sha256": "414643a5e958f3f0ed95a8c26e7f6faca298a6ef2f1800de7ef6563e93350db4",
+      "dependencies": {
+        "ai": "7.0.85",
+        "@ai-sdk/provider": "4.0.9",
+        "@ai-sdk/provider-utils": "5.0.34",
+        "chess.js": "1.4.0",
+        "@types/json-schema": "7.0.15",
+        "@types/node": "22.19.19"
+      },
+      "privateSource": true,
+      "privateTarball": false
+    },
+    "checks": {
+      "sourceAndInstalledTests": 129,
+      "publicEsmImports": 19,
+      "cliHelpCommands": 2,
+      "strictNodeNextTypes": true,
+      "browserConsumer": "Chromium: board mount, tree PGN import, supplied-evidence classifier",
+      "npmPublishDryRun": true,
+      "combinedSixArchiveInstall": true,
+      "historicalArchivesUnchanged": 62,
+      "immutableCollisionRejected": true
+    },
+    "note": "These checks were run on the prior candidate. All nonmetadata archive entries in the prior and current candidate are byte-identical; the current candidate does not claim those checks were rerun."
+  },
+  "metadataComparison": {
+    "repository": "ai-analysis",
+    "priorVersion": "0.1.0-dev.10",
+    "newVersion": "0.1.0-dev.11",
+    "changedArchiveEntries": [
+      "package/package.json",
+      "package/SOURCE-ORIGIN.json",
+      "package/NPM-PUBLISHING.md",
+      "package/README.md"
+    ],
+    "unchangedEntries": 221,
+    "sourceRuntimeTypesAssetsByteIdentical": true
+  }
 }

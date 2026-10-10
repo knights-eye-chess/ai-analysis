@@ -11,7 +11,7 @@ npm ci
 npm run publish:prepare
 ```
 
-This builds and runs the existing package checks, writes `artifacts/knights-eye-chess-ai-analysis-0.1.0-dev.10.tgz`, validates its runtime/type exports, assets, CLI paths and license files, then runs `npm publish --dry-run` against the archive. It does not write to a registry. `npm run pack:artifact -- /absolute/output-directory` stages an archive after a build; `npm run publish:verify -- /absolute/output-directory/knights-eye-chess-ai-analysis-0.1.0-dev.10.tgz` validates an external archive.
+This builds and runs the existing package checks, writes `artifacts/knights-eye-chess-ai-analysis-0.1.0-dev.11.tgz`, validates its runtime/type exports, assets, CLI paths and license files, then runs `npm publish --dry-run` against the archive. It does not write to a registry. `npm run pack:artifact -- /absolute/output-directory` stages an archive after a build; `npm run publish:verify -- /absolute/output-directory/knights-eye-chess-ai-analysis-0.1.0-dev.11.tgz` validates an external archive.
 
 The source manifest keeps `private: true` to block accidental publication from the repository root. The staged consumer manifest omits `private` and sets `publishConfig` to public access, `https://registry.npmjs.org/` and the `next` prerelease tag. Preparation uses the staged tarball; bare `npm pack` retains the private source manifest and is not a release artifact.
 
@@ -28,12 +28,12 @@ mkdir -p /tmp/knights-eye-release-consumer
 cd /tmp/knights-eye-release-consumer
 npm init -y
 npm install --ignore-scripts --no-audit --no-fund \
-  /workspace/board-ui/artifacts/knights-eye-chess-board-ui-0.1.0-dev.27.tgz \
-  /workspace/game-tree/artifacts/knights-eye-chess-game-tree-0.1.0-dev.4.tgz \
-  /workspace/move-classifier/artifacts/knights-eye-chess-move-classifier-0.1.0-dev.5.tgz \
-  /workspace/pgn-annotator/artifacts/knights-eye-chess-pgn-annotator-0.1.0-dev.9.tgz \
-  /workspace/ai-analysis/artifacts/knights-eye-chess-ai-analysis-0.1.0-dev.10.tgz \
-  /workspace/cli-tools/artifacts/knights-eye-chess-cli-tools-0.1.0-dev.12.tgz
+  /workspace/board-ui/artifacts/knights-eye-chess-board-ui-0.1.0-dev.28.tgz \
+  /workspace/game-tree/artifacts/knights-eye-chess-game-tree-0.1.0-dev.6.tgz \
+  /workspace/move-classifier/artifacts/knights-eye-chess-move-classifier-0.1.0-dev.6.tgz \
+  /workspace/pgn-annotator/artifacts/knights-eye-chess-pgn-annotator-0.1.0-dev.11.tgz \
+  /workspace/ai-analysis/artifacts/knights-eye-chess-ai-analysis-0.1.0-dev.11.tgz \
+  /workspace/cli-tools/artifacts/knights-eye-chess-cli-tools-0.1.0-dev.13.tgz
 npx --no-install knights-eye-annotate --help
 npx --no-install knights-eye-answer --help
 ```
@@ -56,10 +56,10 @@ All candidates are prereleases: use `next`, preserve `latest`, and use public sc
 
 ```sh
 npm whoami --registry https://registry.npmjs.org/
-npm view @knights-eye-chess/ai-analysis@0.1.0-dev.10 version --registry https://registry.npmjs.org/
-npm publish artifacts/knights-eye-chess-ai-analysis-0.1.0-dev.10.tgz --dry-run --ignore-scripts --access public --tag next --registry https://registry.npmjs.org/
+npm view @knights-eye-chess/ai-analysis@0.1.0-dev.11 version --registry https://registry.npmjs.org/
+npm publish artifacts/knights-eye-chess-ai-analysis-0.1.0-dev.11.tgz --dry-run --ignore-scripts --access public --tag next --registry https://registry.npmjs.org/
 # Only after separate release authorization:
-npm publish artifacts/knights-eye-chess-ai-analysis-0.1.0-dev.10.tgz --ignore-scripts --access public --tag next --registry https://registry.npmjs.org/
+npm publish artifacts/knights-eye-chess-ai-analysis-0.1.0-dev.11.tgz --ignore-scripts --access public --tag next --registry https://registry.npmjs.org/
 ```
 
 An `npm view` 404 indicates that exact version is not visible; it does not establish ownership of the scope. Check the published version's exports/files and install it from the registry afterward. Record the artifact integrity and resulting package URL in the release issue.

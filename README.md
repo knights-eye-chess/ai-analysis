@@ -33,7 +33,7 @@ npm run pack:checked
 Install the resulting archive in your app:
 
 ```sh
-npm install /absolute/path/to/ai-analysis/artifacts/knights-eye-chess-ai-analysis-0.1.0-dev.10.tgz
+npm install /absolute/path/to/ai-analysis/artifacts/knights-eye-chess-ai-analysis-0.1.0-dev.11.tgz
 ```
 
 This runnable example uses a local connector with a fixed answer. It needs no

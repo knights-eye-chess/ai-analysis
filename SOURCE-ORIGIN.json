@@ -1,5 +1,5 @@
 {
-  "sourceRepository": "Shedal/KnightsEye",
+  "sourceRepository": "archived private monorepo",
   "sourceCommit": "d58a1a2ad3132515891a2452596ab571af4b55ba",
   "sourcePath": "packages/answer-pipeline",
   "version": "0.1.0-dev.8",
@@ -12,5 +12,5 @@
   },
   "currentRepository": "knights-eye-chess/ai-analysis",
   "currentSourceUrl": "https://github.com/knights-eye-chess/ai-analysis",
-  "originNote": "sourceRepository, sourceCommit and sourcePath identify the historical extraction snapshot. The archived private origin is not a current source or documentation link; use currentSourceUrl for maintained source and this repository for build instructions."
+  "originNote": "sourceRepository identifies the archived private monorepo origin; sourceCommit and sourcePath identify the historical extraction snapshot. They do not identify this component repository as the original extraction source. The descriptor version and historical archive records preserve that snapshot; currentRepository and currentSourceUrl identify the maintained component repository."
 }
