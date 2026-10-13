@@ -52,7 +52,7 @@ function rejectionReason(context: ReasoningPositionContext, hash: string, witnes
     || witness.fen !== (witness.phase === 'before' ? context.fenBefore : context.fenAfter)) return 'root-mismatch';
   if (typeof witness.engineBuild !== 'string' || !witness.engineBuild || typeof witness.command !== 'string' || !witness.command
     || !positiveInteger(witness.requestedDepth) || !positiveInteger(witness.multiPv) || witness.multiPv > 32
-    || !Array.isArray(witness.lines) || witness.lines.length !== witness.multiPv
+    || !Array.isArray(witness.lines) || witness.lines.length < 1 || witness.lines.length > witness.multiPv
     || !Array.isArray(witness.rootMoves) || witness.rootMoves.length > 32
     || witness.rootMoves.some(root => typeof root !== 'string' || !UCI.test(root))
     || new Set(witness.rootMoves).size !== witness.rootMoves.length) return 'invalid-search-scope';

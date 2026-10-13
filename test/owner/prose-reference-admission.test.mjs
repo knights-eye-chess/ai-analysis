@@ -24,3 +24,31 @@ test('fresh answer witnesses preserve shipped v22 reference geometry and reject 
   assert.equal(rejected.referenceGapCounts.unresolvedReferences,1);
   assert.equal(rejected.blocks[0].tokens[0].reference,undefined);
 });
+
+
+test('completed unrestricted MultiPV witnesses accept fewer lines without changing requested scope', () => {
+  const fen='7r/p1p1p1kp/2p2rpQ/3q4/3P4/2P5/P1P2PP1/R3K2R b KQ - 5 18';
+  const context={kind:'position',nodeId:'two-legal',historyStartFen:fen,historyUci:[],moveUci:'',moveSan:'',fenBefore:fen,fenAfter:fen};
+  const roots=['g7g8','g7f7'];
+  assert.deepEqual(new Set(new Chess(fen).moves({verbose:true}).map(m=>m.from+m.to)),new Set(roots));
+  const witness={version:'fresh-engine-pv-witness/1',acquisition:'same-answer-engine',acquisitionId:1,
+    evidenceId:'server-engine-acquisition:two-legal',contextHash:reasoningContextHash(context),phase:'before',fen,
+    engineBuild:'test-engine',command:'go depth 18',requestedDepth:18,multiPv:3,rootMoves:[],
+    authority:'bounded-engine',licenses:['engine.bounded-continuation'],
+    lines:roots.map((rootMove,index)=>({rootMove,pv:[rootMove],depth:18,scoreCp:-200-index,mateInMoves:null,
+      scoreProvenance:{kind:'root-search',fen,engineBuild:'test-engine',command:'go depth 18',originatingDepth:18,reportedDepth:18}}))};
+  const admitted=admitFreshEnginePvWitnesses(context,[witness]);
+  assert.equal(admitted.audit.acceptedLines,2);
+  assert.equal(witness.multiPv,3,'requested MultiPV remains provenance, not returned-line count');
+  assert.equal(admitFreshEnginePvWitnesses(context,[{...witness,lines:[witness.lines[0]]}]).audit.acceptedLines,1);
+  for (const patch of [{lines:[]},{multiPv:1},{rootMoves:roots,lines:[witness.lines[0]]}]) {
+    assert.equal(admitFreshEnginePvWitnesses(context,[{...witness,...patch}]).audit.acceptedLines,0);
+  }
+  for (const change of [line=>{line.depth=17;},line=>{line.scoreCp=null;},line=>{line.pv=['g7g6'];}]) {
+    const invalid=structuredClone(witness);change(invalid.lines[1]);
+    assert.equal(admitFreshEnginePvWitnesses(context,[invalid]).audit.acceptedLines,0);
+  }
+  const rendered=simpleProseReferences('[Kg8](move:before:g7g8)',context,[],undefined,undefined,undefined,{freshEnginePvWitnesses:[witness]});
+  assert.equal(rendered.referenceGapCounts.unresolvedReferences,0);
+  assert.equal(rendered.freshEnginePvAdmission.acceptedLines,2);
+});
