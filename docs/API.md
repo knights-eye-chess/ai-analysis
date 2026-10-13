@@ -80,3 +80,12 @@ remain in the canonical tool wrappers and host.
 
 
 See the [pipeline source](../src/chess-reasoning/answer-pipeline.ts) and [connector contract](../src/chess-reasoning/answer-model-connector.ts).
+
+
+### Completed MultiPV results
+
+Fresh engine presentation witnesses interpret `multiPv` as the requested maximum.
+An unrestricted completed search can return one through that many valid lines;
+the original requested count remains in the witness even when fewer lines arrive.
+Explicit `rootMoves` searches must still cover their entire requested root set.
+Depth, score, provenance, distinct-root and legal-PV checks remain unchanged.
