@@ -1,17 +1,17 @@
 {
   "name": "@knights-eye-chess/ai-analysis",
-  "version": "0.1.0-dev.17",
+  "version": "0.1.0-dev.18-board-offers.1",
   "lockfileVersion": 3,
   "requires": true,
   "packages": {
     "": {
       "name": "@knights-eye-chess/ai-analysis",
-      "version": "0.1.0-dev.17",
+      "version": "0.1.0-dev.18-board-offers.1",
       "license": "AGPL-3.0-or-later",
       "dependencies": {
         "@ai-sdk/provider": "4.0.9",
         "@ai-sdk/provider-utils": "5.0.34",
-        "@knights-eye-chess/move-classifier": "0.1.0-dev.13",
+        "@knights-eye-chess/move-classifier": "file:vendor/npm/knights-eye-chess-move-classifier-0.1.0-dev.14-board-offers.1.tgz",
         "@types/json-schema": "7.0.15",
         "@types/node": "22.19.19",
         "ai": "7.0.85",
@@ -516,9 +516,9 @@
       }
     },
     "node_modules/@knights-eye-chess/move-classifier": {
-      "version": "0.1.0-dev.13",
-      "resolved": "https://registry.npmjs.org/@knights-eye-chess/move-classifier/-/move-classifier-0.1.0-dev.13.tgz",
-      "integrity": "sha512-FoO2pL7TYAUppkK1/PSctNSExjfHGg8ZFeNNCfP74kT8/T5rWkxiPC61LTxEp3TkT5K/71/BJrIGIT1nxJf3hg==",
+      "version": "0.1.0-dev.14-board-offers.1",
+      "resolved": "file:vendor/npm/knights-eye-chess-move-classifier-0.1.0-dev.14-board-offers.1.tgz",
+      "integrity": "sha512-Fi90cHNHrkhwSXBbxO9yl2KoNbuUudttTvC+5wvXHQHNEtf1pML5iPZXhK9xlf0qLBTf8wBAEY3MHXCIwfjPEg==",
       "license": "MIT",
       "engines": {
         "node": ">=24.0.0"
