@@ -1,6 +1,6 @@
 {
   "name": "@knights-eye-chess/ai-analysis",
-  "version": "0.1.0-dev.16",
+  "version": "0.1.0-dev.17",
   "private": true,
   "type": "module",
   "files": [
@@ -52,7 +52,7 @@
   "dependencies": {
     "@ai-sdk/provider": "4.0.9",
     "@ai-sdk/provider-utils": "5.0.34",
-    "@knights-eye-chess/move-classifier": "0.1.0-dev.12",
+    "@knights-eye-chess/move-classifier": "0.1.0-dev.13",
     "@types/json-schema": "7.0.15",
     "@types/node": "22.19.19",
     "ai": "7.0.85",

@@ -1,5 +1,5 @@
 {
   "registryDependencies": {
-    "@knights-eye-chess/move-classifier": "0.1.0-dev.12"
+    "@knights-eye-chess/move-classifier": "0.1.0-dev.13"
   }
 }
