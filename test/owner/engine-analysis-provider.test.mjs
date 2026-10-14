@@ -21,8 +21,24 @@ test('preserves restricted roots and cancellation instead of changing search sco
  const provider=createEngineAnalysisProvider({async search(input){received=input;return{bestmove:'g7g8',candidates:[line('g7g8')]};}});
  const result=await provider.analyze({...request,multiPv:1,rootMoves:['g7g8'],signal:controller.signal});
  assert.equal(received.signal,controller.signal);assert.deepEqual(received.rootMoves,['g7g8']);
+ assert.equal(received.requireRootCoverage,true);
  assert.equal(result.command,'go depth 18 searchmoves g7g8');
  controller.abort();await assert.rejects(provider.analyze({...request,signal:controller.signal}),{name:'AbortError'});
+});
+test('explicit comparison requires every requested root from the engine client',async()=>{
+ const required=['g7g8','g7f7'];let seen;
+ const client={async search(input){
+  seen=input;
+  const candidates=[line('g7g8')];
+  if(input.requireRootCoverage && input.rootMoves.some(root=>!candidates.some(candidate=>candidate.pv[0]===root)))
+   throw new Error('UCI engine did not complete requested score and root coverage.');
+  return {bestmove:'g7g8',candidates};
+ }};
+ const provider=createEngineAnalysisProvider(client);
+ await assert.rejects(provider.analyze({...request,multiPv:2,rootMoves:required}),/root coverage/);
+ assert.deepEqual(seen.rootMoves,required);assert.equal(seen.requireRootCoverage,true);
+ const unrestricted=await provider.analyze({...request,multiPv:2,rootMoves:[]});
+ assert.equal(seen.requireRootCoverage,undefined);assert.equal(unrestricted.lines.length,1);
 });
 test('does not turn a cancelled or failed engine search into evidence',async()=>{
  const controller=new AbortController();

@@ -3,7 +3,8 @@ import type { PositionAnalysisProvider, PositionAnalysisResult } from './positio
 /** Consumer-owned structural contract. No dependency on an engine implementation. */
 export type AnalysisEngineClient = {
   search(request: {
-    fen: string; limit: { depth: number }; multiPv: number; rootMoves: string[]; signal?: AbortSignal;
+    fen: string; limit: { depth: number }; multiPv: number; rootMoves: string[];
+    requireRootCoverage?: boolean; signal?: AbortSignal;
   }): Promise<({
     noMove?: false; bestmove: string; engineBuild?: string; weightsId?: string;
     candidates: Array<{
@@ -22,7 +23,8 @@ export function createEngineAnalysisProvider(client: AnalysisEngineClient): Posi
   return { async analyze(request): Promise<PositionAnalysisResult> {
     request.signal?.throwIfAborted();
     const result = await client.search({ fen: request.fen, limit: { depth: request.depth },
-      multiPv: request.multiPv, rootMoves: request.rootMoves, signal: request.signal });
+      multiPv: request.multiPv, rootMoves: request.rootMoves,
+      ...(request.rootMoves.length ? { requireRootCoverage: true } : {}), signal: request.signal });
     request.signal?.throwIfAborted();
     const command = 'go depth ' + request.depth + (request.rootMoves.length ? ' searchmoves ' + request.rootMoves.join(' ') : '');
     if (result.noMove === true) {
