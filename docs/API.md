@@ -108,3 +108,8 @@ its own consumer contract rather than masquerading as depth-search evidence.
 The host owns lifecycle and closes the client. `minimumPvPlies` does not make this
 adapter perform extra searches or pad PVs. Existing downstream admission and
 continuation handling remain responsible for evidence use.
+Scored results require an explicit completed `bestmove` matching the first scored
+root. An explicit `noMove: true` result with empty candidates, `bestmove: null`,
+and top-level `engineBuild` maps to no scored lines and a null best move. This is
+only a UCI no-move report: the host checks legal moves at the FEN before claiming
+checkmate, stalemate, or another chess terminal condition.

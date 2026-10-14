@@ -23,6 +23,6 @@ void runAnswerPipeline({connector,requestId:'parallel',question:'x',selected:sel
 void analyzer;void oldAsCurrent;void badMate;
 
 import {createEngineAnalysisProvider,type AnalysisEngineClient} from '@knights-eye-chess/ai-analysis/engine';
-const engineClient:AnalysisEngineClient={async search(request){return{candidates:[{pv:['e2e4'],depth:request.limit.depth,scoreCp:20,mate:null,scoreProvenance:{engineBuild:'test'}}]};}};
+const engineClient:AnalysisEngineClient={async search(request){return{bestmove:'e2e4',candidates:[{pv:['e2e4'],depth:request.limit.depth,scoreCp:20,mate:null,scoreProvenance:{engineBuild:'test'}}]};}};
 const engineProvider:PositionAnalysisProvider=createEngineAnalysisProvider(engineClient);
 void engineProvider;

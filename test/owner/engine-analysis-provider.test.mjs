@@ -33,6 +33,22 @@ test('does not turn a cancelled or failed engine search into evidence',async()=>
 });
 test('requires an attributed single engine result',async()=>{
  for(const candidates of [[line('g7g8'),{...line('g7f7'),scoreProvenance:{...line('g7f7').scoreProvenance,weightsId:'different'}}],[{...line('g7g8'),scoreProvenance:undefined}],[line('g7g8'),{...line('g7f7'),scoreProvenance:{engineBuild:'other'}}]]){
-  await assert.rejects(createEngineAnalysisProvider({async search(){return{candidates};}}).analyze(request),/identity/);
+  await assert.rejects(createEngineAnalysisProvider({async search(){return{bestmove:'g7g8',candidates};}}).analyze(request),/identity/);
+ }
+});
+test('explicit no-move result carries engine identity without inventing a score',async()=>{
+ const provider=createEngineAnalysisProvider({async search(){return{noMove:true,bestmove:null,candidates:[],engineBuild:'Stockfish test'};}});
+ const result=await provider.analyze(request);
+ assert.equal(result.bestMove,null);assert.deepEqual(result.lines,[]);
+ assert.equal(result.engineBuild,'Stockfish test');
+ for(const malformed of [{noMove:true,bestmove:null,candidates:[],engineBuild:''},
+  {noMove:true,bestmove:'e2e4',candidates:[],engineBuild:'Stockfish test'},
+  {noMove:true,bestmove:null,candidates:[line('e2e4')],engineBuild:'Stockfish test'}]) {
+  await assert.rejects(createEngineAnalysisProvider({async search(){return malformed;}}).analyze(request),/no-move/);
+ }
+});
+test('scored search requires an explicit completed best move',async()=>{
+ for(const bestmove of [undefined,'d2d4']) {
+  await assert.rejects(createEngineAnalysisProvider({async search(){return{bestmove,candidates:[line('e2e4')]};}}).analyze(request),/best move/);
  }
 });
