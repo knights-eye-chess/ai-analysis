@@ -9,6 +9,8 @@ export {createPocToolHost} from './answer-tool-host';
 export type {AnswerToolHostOptions} from './answer-tool-host';
 export type {PositionAnalysisProvider,PositionAnalysisRequest,PositionAnalysisResult,PositionAnalysisLine,PositionAnalysisSegment,CompatiblePositionAnalysisProvider,LegacyPositionAnalysisProvider,LegacyPositionAnalysisResult,LegacyPositionAnalysisLine} from './position-analysis-contracts';
 export {toPositionAnalysis,toLegacyPositionAnalysis,toPositionAnalysisProvider,toLegacyPositionAnalysisProvider} from './position-analysis-contracts';
+export {createEngineAnalysisProvider} from './engine-analysis-provider';
+export type {AnalysisEngineClient} from './engine-analysis-provider';
 export {createProductionObservationProvider} from './production-observation-provider';
 export {validateReasoningPositionContext,reasoningContextHash,createContextEvidence,createQueryContract,DEFAULT_REASONING_RUN_CONTROLS,REASONING_POC_VERSION} from './poc-contracts';
 export type {ReasoningPositionContext,ReasoningToolSet,ObservationProvider,ReasoningEvidenceRecord} from './poc-contracts';

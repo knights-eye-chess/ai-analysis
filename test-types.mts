@@ -21,3 +21,8 @@ const oldAsCurrent:PositionAnalysisResult=old;
 const badMate:PositionAnalysisResult={...modern,lines:[{...modern.lines[0],mateInMoves:'3'}]};
 void runAnswerPipeline({connector,requestId:'parallel',question:'x',selected:selection,bridge:history,analyzer,preparationAnalyzer:analyzer,parallelPreparation:true,observationProvider:createProductionObservationProvider({context:selection.context}),prepareRouting:async()=>({question:'x',selectionKey:'x',deliveryId:'x',elapsedMs:0,omitSelectedContext:false,decision:{version:QUESTION_ROUTING_VERSION,status:'fallback',omitSelectedContext:false,includeGameRecord:false,reviewGame:false,reason:'explicit'}})});
 void analyzer;void oldAsCurrent;void badMate;
+
+import {createEngineAnalysisProvider,type AnalysisEngineClient} from '@knights-eye-chess/ai-analysis/engine';
+const engineClient:AnalysisEngineClient={async search(request){return{bestmove:'e2e4',candidates:[{pv:['e2e4'],depth:request.limit.depth,scoreCp:20,mate:null,scoreProvenance:{engineBuild:'test'}}]};}};
+const engineProvider:PositionAnalysisProvider=createEngineAnalysisProvider(engineClient);
+void engineProvider;

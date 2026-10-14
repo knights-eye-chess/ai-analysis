@@ -4,7 +4,11 @@ import {readFileSync,writeFileSync,readdirSync,copyFileSync,rmSync} from 'node:f
 import {createRequire} from 'node:module';
 const require=createRequire(import.meta.url);
 rmSync('dist',{recursive:true,force:true});
-const result=await build({entryPoints:{index:'src/chess-reasoning/answer-pipeline-exports.ts',research:'src/chess-reasoning/research-exports.ts',shared:'src/shared-exports.ts'},bundle:true,format:'esm',platform:'neutral',target:'es2022',packages:'external',splitting:true,outdir:'dist',metafile:true});
+const result=await build({entryPoints:{index:'src/chess-reasoning/answer-pipeline-exports.ts',research:'src/chess-reasoning/research-exports.ts',shared:'src/shared-exports.ts',engine:'src/chess-reasoning/engine-analysis-provider.ts'},bundle:true,format:'esm',platform:'neutral',target:'es2022',packages:'external',splitting:true,outdir:'dist',metafile:true});
+const engine=await build({entryPoints:['src/chess-reasoning/engine-analysis-provider.ts'],bundle:true,format:'esm',platform:'neutral',target:'es2022',packages:'external',write:false,metafile:true});
+const engineImports=Object.values(engine.metafile.outputs).flatMap(output=>output.imports);
+if(engineImports.length)throw Error('Engine provider must have no runtime dependencies: '+engineImports.map(item=>item.path).join(', '));
+writeFileSync('dist/engine-runtime-closure.json',JSON.stringify({runtimeInputs:Object.keys(engine.metafile.inputs).sort(),externalImports:[]},null,2)+'\n');
 const shared=await build({entryPoints:['src/shared-exports.ts'],bundle:true,format:'esm',platform:'neutral',target:'es2022',packages:'external',write:false,metafile:true});
 const sharedImports=[...new Set(Object.values(shared.metafile.outputs).flatMap(output=>output.imports.filter(item=>item.external).map(item=>item.path)))];
 if(sharedImports.some(name=>name === 'ai' || name.startsWith('@ai-sdk/') || name.startsWith('@knights-eye-chess/move-classifier')))throw Error('Model or classifier runtime leaked into shared helpers: '+sharedImports.join(', '));
