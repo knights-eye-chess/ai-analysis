@@ -1,0 +1,23 @@
+{
+  "schema": "knights-eye-local-candidate/1",
+  "name": "@knights-eye-chess/ai-analysis",
+  "version": "0.1.0-dev.20",
+  "sourceCommitBeforeReleaseMetadata": "5de82cb9e3a5095d49f7054cb8d84881841bfb96",
+  "archive": "artifacts/knights-eye-chess-ai-analysis-0.1.0-dev.20.tgz",
+  "bytes": 887380,
+  "sha256": "6360982b1032c01ffbdb91b0d4c8df7f0c8266fd69956cf8020e5234e0b15886",
+  "registryDependencies": {
+    "@knights-eye-chess/move-classifier": "0.1.0-dev.15"
+  },
+  "checks": {
+    "npmCi": "passed with Node 24.19.0 and npm 11.9.0",
+    "sourceBuildAndTests": { "passed": 88, "failed": 0 },
+    "sourceStrictTypes": "passed",
+    "packedConsumerInstallAndTests": { "passed": 88, "failed": 0 },
+    "packedConsumerStrictTypes": "passed",
+    "packedConsumerImport": "engine provider export and classifier core export imports passed",
+    "archiveExportsAndNpmPublishDryRun": "passed; 266 files; registry write false"
+  },
+  "publicationPerformed": false,
+  "limitations": "Offline source and installed-package checks with local classifier dev.15 candidate; no live model/provider call, website deployment or npm publication. Historical dev.19 qualification and archive were left unchanged."
+}
