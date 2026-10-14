@@ -1,0 +1,33 @@
+{
+  "schema": "knights-eye-local-candidate/1",
+  "name": "@knights-eye-chess/ai-analysis",
+  "version": "0.1.0-dev.26",
+  "sourceCommitBeforeReleaseMetadata": "96bf1dd2c92cb01cbd90f09e6ad2f1bcf770d211",
+  "archive": "artifacts/knights-eye-chess-ai-analysis-0.1.0-dev.26.tgz",
+  "bytes": 887821,
+  "sha256": "8c85bfc19009786263a4602b514b66882bc3bf567c9cd7a994eae5a6b30d2e12",
+  "registryDependencies": {
+    "@knights-eye-chess/move-classifier": "0.1.0-dev.16-board-offers.5"
+  },
+  "sourceDependencyArchive": {
+    "path": "vendor/npm/knights-eye-chess-move-classifier-0.1.0-dev.16-board-offers.5.tgz",
+    "sha256": "0dcf74a21b9bdae653f9197c4d55cca4dd886ba6c425ae4015c78bced4cb28ae"
+  },
+  "checks": {
+    "npmCi": "passed with Node 24.19.0 and npm 11.9.0 using the local classifier candidate archive",
+    "sourceBuildAndTests": {
+      "passed": 89,
+      "failed": 0
+    },
+    "sourceStrictTypes": "passed",
+    "packedConsumerInstallAndTests": {
+      "passed": 89,
+      "failed": 0
+    },
+    "packedConsumerStrictTypes": "passed",
+    "packedConsumerImport": "AI root and research exports imported; installed classifier policy revision 47",
+    "archiveExportsAndNpmPublishDryRun": "passed; 266 files; registry write false"
+  },
+  "publicationPerformed": false,
+  "limitations": "Dependency-only candidate. The classifier policy 47 archive passed source and installed checks but awaits final classifier review and publication; the installed consumer used local AI and classifier archives. No live engine or model call, registry install of these candidate versions, website deployment or npm publication. Historical archives were left unchanged. Exact AI and classifier review are required before publication."
+}
