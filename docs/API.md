@@ -89,3 +89,22 @@ An unrestricted completed search can return one through that many valid lines;
 the original requested count remains in the witness even when fewer lines arrive.
 Explicit `rootMoves` searches must still cover their entire requested root set.
 Depth, score, provenance, distinct-root and legal-PV checks remain unchanged.
+
+## Host-owned engine clients
+
+`createEngineAnalysisProvider(client)` is exported from the package root and the
+small `@knights-eye-chess/ai-analysis/engine` entry point. The latter imports no
+model SDK or engine implementation. AI Analysis declares its own structural
+`AnalysisEngineClient` contract; the host wires a compatible implementation.
+
+The adapter translates a depth request to `limit: { depth }` and maps completed
+engine candidates to AI lines without changing scores, mate units, achieved depth,
+PV length or provenance. A valid result can contain fewer lines than requested.
+Engine/weights identity remains attributed; different engines are not blended.
+This is not evidence admission or a calibration of another engine's scores for
+the Knight's Eye classifier. Nodes/time-limited human-likelihood evidence needs
+its own consumer contract rather than masquerading as depth-search evidence.
+
+The host owns lifecycle and closes the client. `minimumPvPlies` does not make this
+adapter perform extra searches or pad PVs. Existing downstream admission and
+continuation handling remain responsible for evidence use.

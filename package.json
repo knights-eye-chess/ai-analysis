@@ -34,6 +34,10 @@
     "./shared": {
       "types": "./dist/types/shared-exports.d.ts",
       "import": "./dist/shared.js"
+    },
+    "./engine": {
+      "types": "./dist/types/chess-reasoning/engine-analysis-provider.d.ts",
+      "import": "./dist/engine.js"
     }
   },
   "scripts": {
