@@ -22,7 +22,7 @@ export function withBranchPreparation(plan: InitialSearchPlan, context: Reasonin
 export function selectBranchHost(ordinary: ReasoningToolSet, expanded: ReasoningToolSet,
   mode: BranchExpansionMode): ReasoningToolSet {
   return {reservesSearchAtDispatch:true, seedEvidence:records=>{const all=[...records];ordinary.seedEvidence?.(all);expanded.seedEvidence?.(all);}, descriptors:()=>ordinary.descriptors(), execute:async(name,input,signal,execution)=> {
-    const initial = typeof input.callId === 'string' && /^initial-search-\d+$/.test(input.callId);
+    const initial = typeof input.callId === 'string' && /^initial-(?:search-\d+|chain-\d+-(?:discovery|comparison))$/.test(input.callId);
     const enabled = mode === 'both' || (initial ? mode === 'preparation' : mode === 'tools');
     const selected = enabled ? expanded : ordinary;
     const result = await selected.execute(name,input,signal,execution);

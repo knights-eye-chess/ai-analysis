@@ -1,3 +1,4 @@
+import { scheduleInitialSearches } from './initial-search-scheduler';
 import { classificationReassessment } from './classification-reassessment';
 import { CHESS_REFERENCE_DICTIONARY } from './chess-reference-dictionary';
 import type { RecordedSelectedClassification } from './recorded-selected-classification';
@@ -138,6 +139,10 @@ export async function runPreparedAnswer(input: {
   getMainLine?: (signal: AbortSignal) => Promise<RecordedMainLine>;
   initialMainLine?: RecordedMainLine;
   initialSearchPlan?: InitialSearchPlan;
+  /** Explicit server full-game prototype. Serial IDs and behavior remain the default. */
+  initialSearchConcurrency?: 1 | 4;
+  /** A dedicated host backed by at most four independent one-thread searches per answer. */
+  initialPreparationHost?: ReasoningToolSet;
   refreshPreparedBoardAnalysis?: (signal:AbortSignal)=>Promise<SimpleBoardAnalysis | undefined>;
   omitSelectedContext?: boolean;
   routingDecision?: import('./question-routing').QuestionRoutingDecision;
@@ -298,27 +303,52 @@ export async function runPreparedAnswer(input: {
   const initialPreparedEvidenceIds:string[]=[];
   let deferredPreparationRequests=0;
   if (!fixedEvidence && input.initialSearchPlan) {
-    const descriptors=new Map(input.host.descriptors().map(d=>[d.name,d]));
-    const preparationQueue=[...input.initialSearchPlan.requests];
+    const parallel = input.initialSearchConcurrency === 4 && input.initialSearchPlan.requests.length > 0;
+    if (input.initialSearchConcurrency !== undefined && ![1, 4].includes(input.initialSearchConcurrency)) throw Error('Unsupported initial-search concurrency');
+    if (parallel && (!input.initialPreparationHost || !input.initialSearchPlan.reviewScope ||
+      input.initialSearchPlan.requests.some(request => request.tool !== 'analyze_game_position'))) throw Error('Parallel preparation requires a dedicated full-game host');
+    const preparationHost = parallel ? input.initialPreparationHost! : input.host;
+    const descriptors=new Map(preparationHost.descriptors().map(d=>[d.name,d]));
+    const prepared = parallel ? await scheduleInitialSearches({
+      requests: input.initialSearchPlan.requests, signal: controller.signal, shouldDefer: timeToFinish,
+      execute: async (request, callId) => {
+        const descriptor = descriptors.get(request.tool); if (!descriptor) throw Error('tool-unavailable');
+        validateSimpleToolInput(request.tool, request.input, descriptor.inputSchema);
+        input.onProgress?.('Preparing relevant engine comparisons');
+        const result = await preparationHost.execute(request.tool, {...request.input,callId,contextHash}, controller.signal, execution);
+        controller.signal.throwIfAborted();
+        if (result.contextHash !== contextHash || result.callId !== callId || result.tool !== request.tool) throw Error('cross-context-tool-result');
+        for (const evidence of result.evidence) {
+          if (evidence.contextHash !== contextHash || !evidence.id) throw Error('cross-context-evidence');
+          effectiveLicensesForRecord(evidence);
+        }
+        return result;
+      }, comparison: (request, result) => preparedMoveComparison(request, result.evidence),
+    }).catch(error => { input.signal?.removeEventListener('abort', abort); throw error; }) : undefined;
+    deferredPreparationRequests = prepared?.deferred ?? 0;
+    const preparationQueue=prepared ? prepared.items.map(item => item.request) : [...input.initialSearchPlan.requests];
     for(const [index,request] of preparationQueue.entries()) {
-      const callId=`initial-search-${index+1}`, start=performance.now();
+      const acquired = prepared?.items[index];
+      const callId=acquired?.callId ?? `initial-search-${index+1}`, start=performance.now();
+      if (acquired?.discoveryCallId) preparationDependencies.set(request, acquired.discoveryCallId);
       const run:Record<string,unknown>={origin:'automatic-preparation',callId,...request};
       let preparedModelResult: unknown;
       let preparedRecords: ReasoningEvidenceRecord[]=[],preparedLimitations:string[]=[];
       const playedMove = request.playedMove ?? (Number.isInteger(request.input.ply) ? input.initialMainLine?.moves[Number(request.input.ply)]?.uci : request.input.phase === 'before' && input.bundle.context.kind !== 'position' ? input.bundle.context.moveUci : undefined);
       try {
         controller.signal.throwIfAborted();
-        if(timeToFinish()) {deferredPreparationRequests=preparationQueue.length-index;break;}
+        if(!prepared && timeToFinish()) {deferredPreparationRequests=preparationQueue.length-index;break;}
         const descriptor=descriptors.get(request.tool);if(!descriptor)throw Error('tool-unavailable');
         if(omitSelectedContext&&!isRecordedPositionTool(request.tool))throw Error('selected-context-not-loaded');
         validateSimpleToolInput(request.tool,request.input,descriptor.inputSchema);
-        input.onProgress?.('Preparing relevant engine comparisons');
-        const result=await input.host.execute(request.tool,{...request.input,callId,contextHash},controller.signal,execution);
+        if (!prepared) input.onProgress?.('Preparing relevant engine comparisons');
+        if (acquired && 'error' in acquired.outcome) throw acquired.outcome.error;
+        const result=acquired && 'value' in acquired.outcome ? acquired.outcome.value : await preparationHost.execute(request.tool,{...request.input,callId,contextHash},controller.signal,execution);
         controller.signal.throwIfAborted();
         if(result.contextHash!==contextHash||result.callId!==callId||result.tool!==request.tool)throw Error('cross-context-tool-result');
         for(const e of result.evidence){if(e.contextHash!==contextHash||!e.id)throw Error('cross-context-evidence');effectiveLicensesForRecord(e);const old=known.get(e.id);if(old&&JSON.stringify(old)!==JSON.stringify(e))throw Error('evidence-identity-conflict');}
         for(const e of result.evidence){known.set(e.id,e);visibleIds.add(e.id);initialPreparedEvidenceIds.push(e.id);}
-        if(request.playedMove && request.tool==='analyze_game_position') {
+        if(!prepared && request.playedMove && request.tool==='analyze_game_position') {
           const comparison=preparedMoveComparison(request, result.evidence);
           if(comparison){preparationDependencies.set(comparison,callId);preparationQueue.splice(index+1,0,comparison);}
         }
@@ -328,7 +358,7 @@ export async function runPreparedAnswer(input: {
         preparedModelResult = withOpeningSource(compactPreparedSearchResult(result, playedMove, input.materialFormat), openingSource);
         Object.assign(run,{status:'completed',result:withOpeningSource(compactSimpleEngineResult({contextHash,evidence:result.evidence,limitations:result.limitations},input.materialFormat), openingSource)});
       } catch(error) { if(controller.signal.aborted){input.signal?.removeEventListener('abort',abort);throw error;}Object.assign(run,{status:'failed',...toolError(error)}); }
-      run.elapsedMs=performance.now()-start;initialSearches.push(run);
+      run.elapsedMs=(acquired?.elapsedMs ?? 0)+performance.now()-start;initialSearches.push(run);
       initialSearchPresentations.push({callId,modelRun:preparedModelResult === undefined ? {...run} : {...run,result:preparedModelResult},records:preparedRecords,limitations:preparedLimitations,playedMove,discoveryCallId:preparationDependencies.get(request)});
       trace('simple-initial-search','output',run);
     }
