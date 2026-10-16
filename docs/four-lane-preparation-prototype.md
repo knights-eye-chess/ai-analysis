@@ -57,6 +57,20 @@ already admitted calls finish, and unstarted discoveries or derived comparisons
 are counted as deferred. Unknown comparisons for unstarted discoveries are not
 invented or counted. Search failures and deferred work remain distinct.
 
+## Release compatibility notes
+
+Branch-expansion routing recognizes both historical serial IDs and the opt-in
+chain discovery/comparison IDs as preparation calls. The default expansion mode
+remains off; this fix preserves preparation-versus-model-tool routing if an
+experimental expansion mode is selected.
+
+The opt-in deferred count is a count of known unstarted discoveries and known
+comparisons derived from admitted discoveries. It does not predict comparisons
+for skipped discoveries. This differs from the serial loop's count of entries
+remaining in its dynamically expanded queue; the two counts are not an estimate
+of the same eventual search workload and must not be compared as such. Neither
+count invents completed evidence for work that never ran.
+
 ## Local evidence and remaining gates
 
 Thirteen new mock checks cover four-lane capacity, dynamic dependencies, reversed
@@ -68,6 +82,9 @@ from the committed npm shrinkwrap installed 19 packages (62 MiB). The canonical
 `npm run check` then passed the build, all 102 tests, and public TypeScript
 consumer checks. Test-source inspection found only mock connectors/providers and
 no network or real-engine execution. No package archive was built or overwritten.
+
+The subsequent branch-routing correction passed five additional routing tests
+and the complete `npm run check`: build, 107/107 tests, and public type checks.
 
 Before adoption: exact source review, versioned package release checks and reviewed
 version publication; app-side provider wiring and container limits; Dev deployment
