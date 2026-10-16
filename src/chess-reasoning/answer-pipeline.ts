@@ -31,6 +31,10 @@ export async function runAnswerPipeline(input: {
   preparationAnalyzer?: CompatiblePositionAnalysisProvider;
   /** Opt in only when the host can safely serve overlapping preparation and classification searches. */
   parallelPreparation?: boolean;
+  /** Server full-game opt-in; four chains use stable chain/child IDs instead of serial IDs. */
+  initialSearchConcurrency?: 1 | 4;
+  /** Required for the opt-in: answer-isolated independent one-thread provider; no normal-provider fallback. */
+  initialPreparationAnalyzer?: CompatiblePositionAnalysisProvider;
   observationProvider: ObservationProvider;
   prepareRouting: () => Promise<AnswerRoutingPreparation>;
   openingSession?: AnswerOpeningSession;
@@ -48,6 +52,7 @@ export async function runAnswerPipeline(input: {
   observableTraceSink?: ObservableLlmTraceSink;
   onProgress?: (message: string) => void;
 }): Promise<AnswerPipelineResult> {
+  if (input.initialSearchConcurrency !== undefined && ![1, 4].includes(input.initialSearchConcurrency)) throw Error("Unsupported initial-search concurrency");
   const parentSignal = input.signal;
   const controller = new AbortController();
   const abort = () => controller.abort(parentSignal?.reason);
@@ -152,7 +157,7 @@ export async function runAnswerPipeline(input: {
       const observations = input.selected.context.kind === "position" ? { schemaVersion: REASONING_POC_VERSION, contextHash: reasoningContextHash(input.selected.context), observations: [], evidence: [createContextEvidence(input.selected.context)], providers: [{ provider: "validated-starting-position", version: "1" }], limitations: [] } : await provider.observe(input.selected.context, DEFAULT_REASONING_RUN_CONTROLS, input.signal);
       return { boardAnalysis, observations };
     });
-    const { bundle, hostOptions, expandedOptions, host, getMainLine } = await timed("answer-pipeline-evidence-collection", () => {
+    const { bundle, hostOptions, expandedOptions, host, initialPreparationHost, getMainLine } = await timed("answer-pipeline-evidence-collection", () => {
       const contract = createQueryContract({ requestId: input.requestId, question: input.question, context: input.selected.context });
       const rankedObservations = createDefaultSaliencePolicy(DEFAULT_REASONING_RUN_CONTROLS.maxObservationsPresented).rank(observations, contract);
       const bundle = captureAblationOriginalEvidenceBundle({ context: input.selected.context, question: input.question,
@@ -169,11 +174,22 @@ export async function runAnswerPipeline(input: {
       const expandedRecordedHost=initialSearchPlan && (mainLine || input.bridge?.getMainLine)
         ? withRecordedPositionTools(input.selected.context,expandedHost,expandedOptions,getMainLine) : expandedHost;
       const host=selectBranchHost(memoizeToolResults(ordinaryHost),memoizeToolResults(expandedRecordedHost),DEFAULT_BRANCH_EXPANSION_MODE);
-      return { bundle, hostOptions, expandedOptions, host, getMainLine };
+      let initialPreparationHost: typeof host | undefined;
+      if (input.initialSearchConcurrency === 4 && initialSearchPlan.reviewScope && initialSearchPlan.requests.length > 0 &&
+        initialSearchPlan.requests.every(request => request.tool === 'analyze_game_position')) {
+        if (!input.initialPreparationAnalyzer) throw Error('Four-lane preparation requires an independent provider');
+        const options = {...hostOptions, analyzer: toLegacyPositionAnalysisProvider(input.initialPreparationAnalyzer)};
+        const expanded = {...options, branchExpansion: BRANCH_EXPANSION_OPTIONS};
+        initialPreparationHost = selectBranchHost(
+          memoizeToolResults(withRecordedPositionTools(input.selected.context, createPocToolHost(input.selected.context, options), options, getMainLine)),
+          memoizeToolResults(withRecordedPositionTools(input.selected.context, createPocToolHost(input.selected.context, expanded), expanded, getMainLine)), DEFAULT_BRANCH_EXPANSION_MODE);
+      }
+      return { bundle, hostOptions, expandedOptions, host, initialPreparationHost, getMainLine };
     });
     const openingSourceContext = openingLookup ? await timed("answer-pipeline-opening-wait", () => openingLookup) : undefined;
     const preModelElapsedMs = Math.max(sourceTimedOut ? sourceDeadlineMs : 0, performance.now() - preparationStarted + (input.routingPreparation?.elapsedMs??0));
     const result = await runPreparedAnswer({ ...input, bundle, host, boardAnalysis, preparation, openingSourceContext, initialSearchPlan,
+      initialPreparationHost, initialSearchConcurrency: initialPreparationHost ? 4 : 1,
       refreshPreparedBoardAnalysis: async signal => {
         hostOptions.leadingAlternative=undefined;
         expandedOptions.leadingAlternative=undefined;
