@@ -400,7 +400,7 @@ export async function runPreparedAnswer(input: {
     const record=Object.fromEntries(Object.entries(initialGameRecord.recordedMainLine).filter(([key])=>!["selectedIndex","selectedAtStart","selectedOnMainLine"].includes(key)));
     gameView={recordedMainLine:omitSelectedContext?record:initialGameRecord.recordedMainLine,
       ...('recordedAnalysis' in initialGameRecord?{recordedAnalysis:initialGameRecord.recordedAnalysis}:{}),
-      complete:!input.initialMainLine!.truncated,limitations:omitSelectedContext?["PGN is reconstructed from recorded moves; original headers, clocks and result metadata are not included.","Recorded primary-line play, not proof of best play or intent. This is not an arbitrary branch continuation."]:initialGameRecord.limitations};
+      complete:!input.initialMainLine!.truncated,limitations:omitSelectedContext?["PGN is reconstructed from recorded moves; use recordedMainLine.outcome for the source-reported result and verified ending. Other original headers and clocks are not included.","Recorded primary-line play, not proof of best play or intent. This is not an arbitrary branch continuation."]:initialGameRecord.limitations};
     if(!omitSelectedContext)for(const e of initialGameRecord.evidence){known.set(e.id,e);visibleIds.add(e.id);}
   }
   const standardReference=input.squareReference===false?undefined:CHESS_REFERENCE_DICTIONARY;
