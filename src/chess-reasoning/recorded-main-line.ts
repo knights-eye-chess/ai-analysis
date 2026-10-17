@@ -45,11 +45,29 @@ export function recordedMainLineResult(line: RecordedMainLine, context: Reasonin
     data: { authority: "legal-exact", scope: "sequence-legality-and-identity", phase: "after" },
     coverage: { complete: false, covered: [], unresolved: ["No optimality or human-intent claim."] },
     replay: { fen: context.fenAfter, movesUci: continuation.slice(0, 32) } }] : [];
+  const reported = line.reportedResult;
+  if (reported && (!['1-0', '0-1', '1/2-1/2', '*'].includes(reported.result) || !['PGN', 'Lichess', 'Chess.com'].includes(reported.source))) throw Error('Invalid reported game result.');
+  const reportedResult = reported?.result ?? '*';
+  let verifiedResult: string | null = null, ending = 'unknown';
+  if (!line.truncated) {
+    if (chess.isCheckmate()) { verifiedResult = chess.turn() === 'w' ? '0-1' : '1-0'; ending = 'checkmate'; }
+    else if (chess.isStalemate()) { verifiedResult = '1/2-1/2'; ending = 'stalemate'; }
+    else if (chess.isInsufficientMaterial()) { verifiedResult = '1/2-1/2'; ending = 'insufficient material'; }
+    else if (reportedResult === '1/2-1/2' && chess.isThreefoldRepetition()) ending = 'draw; threefold repetition available in recorded history';
+    else if (reportedResult === '1/2-1/2' && chess.isDrawByFiftyMoves()) ending = 'draw; fifty-move rule available in final position';
+  }
+  const result = verifiedResult ?? reportedResult;
+  if (ending === 'unknown' && result === '1/2-1/2') ending = 'draw (agreed or unrecorded)';
+  else if (ending === 'unknown' && result !== '*') ending = line.truncated ? 'decisive result; final position unavailable' : 'decisive result, no checkmate; resignation, time or abandonment reason not recorded';
+  const outcome = { result, reportedResult, reportedSource: reported?.source ?? 'PGN', authority: verifiedResult ? 'verified-board-state' : 'source-reported',
+    ending, mismatch: verifiedResult !== null && reportedResult !== '*' && verifiedResult !== reportedResult };
+  // A partial replay must not assign the full game's result to its truncated PGN.
+  if (!line.truncated) chess.setHeader('Result', result);
   return { contextHash, evidence, recordedAnalysis: { source: "Current loaded game's stored per-move analysis snapshots", authority: "attributed-existing-analysis",
     scorePerspective: "mover-at-each-recorded-ply", units: "centipawns; mate separate", coverage: { analyzedPlies: rows.length, totalPlies: line.totalPlies, complete: !line.truncated && rows.length === line.totalPlies },
     columns: ["ply", "engine", "reportedDepth", "recordedRequestedDepth", "classifierVersion", "classification", "beforeCp", "afterCp", "lossCp", "mateBefore", "mateAfter"], rows,
     limitations: ["reportedDepth is the stored classification depth, not a verified root-search depth; recordedRequestedDepth is the board setting recorded when classified.", "Matching stored edge analyses are included even when their engine, classifier version or dependency fingerprint is no longer current; missing or invalid plies have no analysis row.", "Scores are from the mover's perspective at each row's ply: positive favors that move's color; lossCp is a saved before/after search delta for that mover, not a controlled regret comparison. Mate-related/sentinel centipawn fields are null; use mateBefore/mateAfter. Best or Forced labels can coexist with search-score changes.", "Classification is a historical decision from the reported classifier version, not necessarily current policy or proof of its explanation. Saved scores may differ from fresh searches.", ...(line.truncated ? ["Analysis is limited to the first 512 recorded plies."] : [])] },
-    recordedMainLine: { source: "Current loaded game's recorded primary line (may contain user edits)", startFen: line.startFen, moves,
+    recordedMainLine: { source: "Current loaded game's recorded primary line (may contain user edits)", startFen: line.startFen, moves, outcome,
     selectedIndex: line.selectedIndex, selectedAtStart: atStart, selectedOnMainLine: atStart || line.selectedIndex >= 0, totalPlies: line.totalPlies, truncated: line.truncated, pgn: chess.pgn() },
-    limitations: ["PGN is reconstructed from recorded moves; original headers, clocks and result metadata are not included.", "Recorded play is not engine evidence of best play, force, safety or human intent.", ...(!atStart && line.selectedIndex < 0 ? ["The question is on a branch; this main line is not its continuation."] : []), ...(line.truncated ? ["Only the first 512 plies are returned."] : [])] };
+    limitations: ["PGN is reconstructed from recorded moves; result provenance and verified ending are provided separately in outcome. Other original headers and clocks are not included.", "Recorded play is not engine evidence of best play, force, safety or human intent.", ...(!atStart && line.selectedIndex < 0 ? ["The question is on a branch; this main line is not its continuation."] : []), ...(line.truncated ? ["Only the first 512 plies are returned."] : [])] };
 }
