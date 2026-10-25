@@ -5,7 +5,7 @@ export * from './ai-routing-diagnostics';
 export * from './player-perspective';
 export {validateReasoningPositionContext,reasoningContextHash,createContextEvidence,createQueryContract,DEFAULT_REASONING_RUN_CONTROLS,REASONING_POC_VERSION} from './chess-reasoning/poc-contracts';
 export {toPositionAnalysis,toLegacyPositionAnalysis,toPositionAnalysisProvider,toLegacyPositionAnalysisProvider} from './chess-reasoning/position-analysis-contracts';
-export {simpleProseReferences,SIMPLE_REFERENCE_VERSION,safeSimpleSourceLink,decorateSimpleVariations,repairFrozenCitationLabels,stripSimpleMarkdownFences,stripSimpleCitationLinks} from './chess-reasoning/simple-prose-references';
+export {isNotationFreeProseLabel,simpleProseReferences,SIMPLE_REFERENCE_VERSION,safeSimpleSourceLink,decorateSimpleVariations,repairFrozenCitationLabels,stripSimpleMarkdownFences,stripSimpleCitationLinks} from './chess-reasoning/simple-prose-references';
 export {admitFreshEnginePvWitnesses,MAX_FRESH_ENGINE_WITNESS_ACQUISITIONS} from './chess-reasoning/fresh-engine-pv-witnesses';
 export {MAX_INTERACTIVE_LINE_PLIES} from './chess-reasoning/reference-limits';
 export {recordedMainLineResult} from './chess-reasoning/recorded-main-line';

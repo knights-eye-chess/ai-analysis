@@ -46,7 +46,7 @@ export {shareEvidence} from './lossless-evidence-sharing';
 export {shareEvidenceMessages} from './lossless-evidence-sharing';
 export {PRODUCTION_OBSERVATION_PROVIDER_VERSION} from './production-observation-provider';
 export type {SimpleToken} from './simple-prose-references';
-export {simpleProseReferences} from './simple-prose-references';
+export {isNotationFreeProseLabel,simpleProseReferences} from './simple-prose-references';
 export type {SimpleReference} from './simple-prose-references';
 export type {SimplePosition} from './simple-prose-references';
 export {safeSimpleSourceLink} from './simple-prose-references';
