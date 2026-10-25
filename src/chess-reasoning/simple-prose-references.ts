@@ -351,7 +351,12 @@ export function simpleProseReferences(answer: string, context: ReasoningPosition
           // Recorded actual paths are authoritative for navigation, not chess conclusions.
           const actual = historical.recorded?.slice(Number(parsed[1]),Number(parsed[1])+path.length);
           const isActual = actual?.length === path.length && actual.every((uci,i)=>uci===path[i]);
-          let v=simpleProseReferences(`[${match[1]}](move:after:${parsed[2]})`,root.context,root.records,undefined,isActual?path:undefined);
+          // Admit navigation using legal notation derived from the target. The
+          // author's prose label is presentation, never a source of evidence.
+          const board = new Chess(root.context.fenAfter);
+          const targetLabel = path.map(uci => board.move({from:uci.slice(0,2),to:uci.slice(2,4),promotion:uci[4]}).san).join(' ');
+          const authored = simpleProseReferences(`[${match[1]}](move:after:${parsed[2]})`,root.context,root.records,undefined,isActual?path:undefined);
+          let v=simpleProseReferences(`[${targetLabel}](move:after:${parsed[2]})`,root.context,root.records,undefined,isActual?path:undefined);
           let witnessedRefs=v.blocks.flatMap(b=>b.tokens.flatMap(t=>t.reference?[t.reference]:[]));
           let suffixWitness: {evidenceIds:string[];authority:string}|undefined;
           if(!witnessedRefs.length || v.gaps.some(g=>!g.startsWith('Unbound'))) {
@@ -372,7 +377,7 @@ export function simpleProseReferences(answer: string, context: ReasoningPosition
               if(!evidenceIds.length)continue;
               const sourceLine=source.variations.find(line=>line.ucis.join(',')===candidate.path.join(','));
               if(!sourceLine)continue;
-              const projected=simpleProseReferences(`[${match[1]}](move:after:${parsed[2]})`,root.context,[],undefined,path);
+              const projected=simpleProseReferences(`[${targetLabel}](move:after:${parsed[2]})`,root.context,[],undefined,path);
               const projectedRefs=projected.blocks.flatMap(b=>b.tokens.flatMap(t=>t.reference?[t.reference]:[]));
               if(projected.coverage.resolved!==1 || projected.gaps.some(g=>!g.startsWith('Unbound')) || !projectedRefs.length)continue;
               suffixWitness={evidenceIds,authority:sourceLine.authority};
@@ -383,7 +388,8 @@ export function simpleProseReferences(answer: string, context: ReasoningPosition
             }
           }
           refs=witnessedRefs.map(ref=>({...ref,position:{...ref.position,recordedContext:root.context}}));
-          if(!refs.length || v.gaps.some(g=>!g.startsWith('Unbound')))throw Error('Unwitnessed historical path');
+          if(!refs.length || v.gaps.some(g=>!g.startsWith('Unbound'))
+            || (!isActual && !suffixWitness && refs.some(ref=>!ref.evidenceIds.length)))throw Error('Unwitnessed historical path');
           let witnessedVariations = v.variations;
           if (!witnessedVariations.length && path.length > 1) {
             const board = new Chess(root.context.fenAfter);
@@ -391,6 +397,16 @@ export function simpleProseReferences(answer: string, context: ReasoningPosition
             const expanded = simpleProseReferences(`[${sans}](move:after:${parsed[2]})`,root.context,suffixWitness?[]:root.records,undefined,suffixWitness?path:isActual?path:undefined).variations;
             witnessedVariations = suffixWitness ? expanded.map(line=>({...line,evidenceIds:suffixWitness.evidenceIds,authority:suffixWitness.authority,
               references:line.references.map(ref=>({...ref,evidenceIds:suffixWitness.evidenceIds}))})) : expanded;
+          }
+          // Keep SAN pills when the authored label parses; otherwise preserve
+          // the complete prose as one link to the validated terminal position.
+          const authoredRefs = authored.blocks.flatMap(b=>b.tokens.flatMap(t=>t.reference?[t.reference]:[]));
+          if (authoredRefs.length && !authored.gaps.some(g=>!g.startsWith('Unbound'))) {
+            refs = authoredRefs.map(ref=>({...ref,position:{...ref.position,recordedContext:root.context}}));
+          } else {
+            const terminal = refs.at(-1)!;
+            refs = [{kind:'sequence',label:match[1],position:terminal.position,evidenceIds:terminal.evidenceIds,
+              ...(terminal.engineEvidence ? {engineEvidence:terminal.engineEvidence} : {})}];
           }
           for(const line of witnessedVariations) {
             historicalVariations.push({...line,recordedContext:root.context});

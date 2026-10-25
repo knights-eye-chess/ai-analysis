@@ -52,3 +52,43 @@ test('completed unrestricted MultiPV witnesses accept fewer lines without changi
   assert.equal(rendered.referenceGapCounts.unresolvedReferences,0);
   assert.equal(rendered.freshEnginePvAdmission.acceptedLines,2);
 });
+
+test('historical prose labels preserve legal recorded castling navigation without granting engine authority',()=>{
+  const board=new Chess(),startFen=board.fen();
+  const moves=['e4','e5','Nf3','Nc6','Bc4','Nf6','d3','Bc5','a3','a6','h3','h6','Nc3','d6','O-O'].map(san=>{
+    const m=board.move(san);return {san:m.san,uci:m.from+m.to+(m.promotion??'')};
+  });
+  const context={kind:'position',nodeId:'start',historyStartFen:startFen,historyUci:[],moveUci:'',moveSan:'',fenBefore:startFen,fenAfter:startFen};
+  const line={startFen,moves};
+  const render=(label,target='game:14:e1g1',recorded=line)=>simpleProseReferences(`[${label}](${target})`,context,[],recorded);
+  const canonical=render('8. O-O'),prose=render('castled on move 8');
+  assert.equal(canonical.coverage.resolved,1);
+  assert.equal(prose.coverage.resolved,1);
+  const ref=prose.blocks[0].tokens[0].reference;
+  assert.equal(ref.label,'castled on move 8');
+  assert.equal(ref.kind,'sequence');
+  assert.deepEqual(ref.position,canonical.blocks[0].tokens[0].reference.position);
+  assert.equal(ref.position.fen,board.fen());
+  assert.deepEqual(ref.evidenceIds,[],'recorded navigation is not an engine conclusion');
+  assert.equal(ref.position.recordedContext.historyUci.length,13);
+  const root=ref.position.recordedContext;
+  const hypothetical={id:'evidence:castle',contextHash:reasoningContextHash(context),kind:'probe',source:'Stockfish/explore-continuations',
+    licenses:['engine.bounded-continuation'],proofStrength:null,coverage:null,
+    replay:{fen:root.fenAfter,movesUci:['e1g1']},
+    data:{recordedPosition:{recordHash:'fixture',ply:14,startFen,fen:root.fenAfter,historyUci:moves.slice(0,14).map(m=>m.uci),
+      rootContextHash:reasoningContextHash({...root,nodeId:'recorded:fixture:14'})},details:{phase:'after'}}};
+  const alternate={startFen,moves:[...moves.slice(0,14),{uci:'d3d4',san:'d4'}]};
+  const witnessed=simpleProseReferences('[could have castled](game:14:e1g1)',context,[hypothetical],alternate);
+  assert.equal(witnessed.coverage.resolved,1);
+  assert.deepEqual(witnessed.blocks[0].tokens[0].reference.evidenceIds,['evidence:castle']);
+  const foreign=structuredClone(hypothetical);foreign.data.recordedPosition.rootContextHash='another-occurrence';
+  assert.equal(simpleProseReferences('[could have castled](game:14:e1g1)',context,[foreign],alternate).coverage.resolved,0);
+
+  for(const target of ['game:0:e1g1','game:14:e1c1','game:14:d3d4','game:99:e1g1','game:14:e1g1,a8a1']) {
+    const rejected=render('castled on move 8',target);
+    assert.equal(rejected.coverage.resolved,0,target);
+    assert.ok(rejected.gaps.length,target);
+  }
+  assert.equal(render('castled on move 8','game:14:e1g1',{startFen,moves:moves.slice(0,14)}).coverage.resolved,0,
+    'legal but unrecorded castle cannot be promoted to actual play');
+});
