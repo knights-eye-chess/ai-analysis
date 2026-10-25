@@ -404,6 +404,10 @@ export function simpleProseReferences(answer: string, context: ReasoningPosition
           if (authoredRefs.length && !authored.gaps.some(g=>!g.startsWith('Unbound'))) {
             refs = authoredRefs.map(ref=>({...ref,position:{...ref.position,recordedContext:root.context}}));
           } else {
+            // Prose labels are free text. Explicit move notation still carries
+            // a checkable SAN/number claim and must not silently contradict it.
+            const notation = /^(?:(?:\d+\s*(?:\.{1,3}|…)\s*)?(?:O-O(?:-O)?|[KQRBN](?:[a-h1-8])?x?[a-h][1-8]|[a-h](?:x[a-h])?[1-8](?:=[QRBN])?)[+#]?[!?]*\s*)+$/;
+            if (notation.test(match[1].trim())) throw Error('Historical move label does not match target');
             const terminal = refs.at(-1)!;
             refs = [{kind:'sequence',label:match[1],position:terminal.position,evidenceIds:terminal.evidenceIds,
               ...(terminal.engineEvidence ? {engineEvidence:terminal.engineEvidence} : {})}];
