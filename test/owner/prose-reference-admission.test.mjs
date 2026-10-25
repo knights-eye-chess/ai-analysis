@@ -71,7 +71,7 @@ test('historical prose labels preserve legal recorded castling navigation withou
   assert.equal(ref.position.fen,board.fen());
   assert.deepEqual(ref.evidenceIds,[],'recorded navigation is not an engine conclusion');
   assert.equal(ref.position.recordedContext.historyUci.length,13);
-  for (const label of ['9. O-O','8. O-O-O','8. d4']) assert.equal(render(label).coverage.resolved,0,label);
+  for (const label of ['9. O-O','8. O-O-O','8. d4','8. Nf3','O-O-O','8. Bxf7+','castled (8. Nf3)']) assert.equal(render(label).coverage.resolved,0,label);
   const root=ref.position.recordedContext;
   const hypothetical={id:'evidence:castle',contextHash:reasoningContextHash(context),kind:'probe',source:'Stockfish/explore-continuations',
     licenses:['engine.bounded-continuation'],proofStrength:null,coverage:null,

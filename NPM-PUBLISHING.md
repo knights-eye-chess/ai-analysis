@@ -2,7 +2,7 @@
 
 The owner authorized public npm prereleases on 10 October 2026. Use **`next`** and preserve any existing `latest` tag. Licensing is documented in [LICENSING.md](LICENSING.md).
 
-The current candidate is `0.1.0-dev.31`, with Move Classifier
+The current candidate is `0.1.0-dev.32`, with Move Classifier
 `0.1.0-dev.17.1`. It fixes historical natural-language reference labels while
 retaining exact recorded-position and witness admission. It is not published
 until its version and archive hash have been reviewed.
@@ -16,7 +16,7 @@ npm ci
 npm run publish:prepare
 ```
 
-Review `artifacts/knights-eye-chess-ai-analysis-0.1.0-dev.31.tgz`, including its files, exports, declarations, licenses and exact registry dependencies. Reusable source and offline owner tests are intentional; application traces, credentials, vendor archives and source lockfiles are excluded. The checkout stays `private: true`; publish only the staged archive. Archive contents are immutable: use a new version for changed bytes.
+Review `artifacts/knights-eye-chess-ai-analysis-0.1.0-dev.32.tgz`, including its files, exports, declarations, licenses and exact registry dependencies. Reusable source and offline owner tests are intentional; application traces, credentials, vendor archives and source lockfiles are excluded. The checkout stays `private: true`; publish only the staged archive. Archive contents are immutable: use a new version for changed bytes.
 
 Before every coordinated release, run `node tools/release-tooling/sync.mjs --check` in the reviewed app checkout against its current component registry. Record the app and component commits and the result.
 

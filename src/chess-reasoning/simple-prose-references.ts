@@ -53,6 +53,12 @@ function canonicalMoveLabel(label: string, refs: readonly SimpleReference[]) {
   });
 }
 
+/** Shared admission for free prose links, including restored host rendering.
+ * SAN-shaped tokens inside prose must not evade notation/target agreement. */
+export function isNotationFreeProseLabel(label: string): boolean {
+  return !/(?:^|[^A-Za-z0-9])(?:O-O(?:-O)?|[KQRBN](?:[a-h1-8])?x?[a-h][1-8]|[a-h](?:x[a-h])?[1-8](?:=[QRBN])?)[+#]?[!?]*(?=$|[^A-Za-z0-9])/.test(label);
+}
+
 /** Source attribution links are presentation-only; they never confer chess evidence. */
 export function safeSimpleSourceLink(target: string): { href: string } | null {
   let url: URL;
@@ -406,8 +412,7 @@ export function simpleProseReferences(answer: string, context: ReasoningPosition
           } else {
             // Prose labels are free text. Explicit move notation still carries
             // a checkable SAN/number claim and must not silently contradict it.
-            const notation = /^(?:(?:\d+\s*(?:\.{1,3}|…)\s*)?(?:O-O(?:-O)?|[KQRBN](?:[a-h1-8])?x?[a-h][1-8]|[a-h](?:x[a-h])?[1-8](?:=[QRBN])?)[+#]?[!?]*\s*)+$/;
-            if (notation.test(match[1].trim())) throw Error('Historical move label does not match target');
+            if (!isNotationFreeProseLabel(match[1])) throw Error('Historical move label does not match target');
             const terminal = refs.at(-1)!;
             refs = [{kind:'sequence',label:match[1],position:terminal.position,evidenceIds:terminal.evidenceIds,
               ...(terminal.engineEvidence ? {engineEvidence:terminal.engineEvidence} : {})}];
